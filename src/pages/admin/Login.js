@@ -19,7 +19,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="admin-login-page">
+    <div className="admin-login-page" style={{ paddingTop: '76px' }}>
       {/* Page Header */}
       <header className="page-header">
         <div className="container text-center">

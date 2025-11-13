@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -16,6 +16,36 @@ const Navbar = () => {
   // Refs for dropdown elements
   const gradesDropdownRef = useRef(null);
   const languageDropdownRef = useRef(null);
+  const navbarCollapseRef = useRef(null);
+
+  // Function to close navbar collapse on mobile
+  const closeNavbar = useCallback(() => {
+    if (navbarCollapseRef.current) {
+      // Check if Bootstrap is available and collapse is open
+      const collapseElement = navbarCollapseRef.current;
+      if (collapseElement.classList.contains('show')) {
+        // Use Bootstrap's collapse API if available
+        if (window.bootstrap) {
+          const bsCollapse = new window.bootstrap.Collapse(collapseElement, {
+            toggle: false
+          });
+          bsCollapse.hide();
+        } else {
+          // Fallback: manually remove show class
+          collapseElement.classList.remove('show');
+          // Update aria-expanded on toggle button
+          const toggleButton = document.querySelector('[data-bs-target="#navbarNav"]');
+          if (toggleButton) {
+            toggleButton.setAttribute('aria-expanded', 'false');
+            toggleButton.classList.add('collapsed');
+          }
+        }
+      }
+    }
+    // Also close dropdowns
+    setShowGradesDropdown(false);
+    setShowLanguageDropdown(false);
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -34,6 +64,11 @@ const Navbar = () => {
     };
   }, []);
 
+  // Close navbar when route changes (mobile)
+  useEffect(() => {
+    closeNavbar();
+  }, [location.pathname, closeNavbar]);
+
   // Check if link is active
   const isActive = (path) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -45,7 +80,7 @@ const Navbar = () => {
     <nav className="navbar navbar-expand-lg navbar-dark fixed-top" style={{ backgroundColor: 'var(--primary)' }}>
       <div className="container">
         {/* Brand */}
-        <Link className="navbar-brand d-flex align-items-center" to="/">
+        <Link className="navbar-brand d-flex align-items-center" to="/" onClick={closeNavbar}>
           <div 
             className="logo-placeholder me-2 d-flex align-items-center justify-content-center"
             style={{ 
@@ -77,13 +112,14 @@ const Navbar = () => {
         </button>
 
         {/* Navigation Content */}
-        <div className="collapse navbar-collapse" id="navbarNav">
+        <div className="collapse navbar-collapse" id="navbarNav" ref={navbarCollapseRef}>
           {/* Main Navigation */}
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
               <Link 
                 className={`nav-link text-white ${isActive('/') ? 'active fw-bold' : ''}`}
                 to="/"
+                onClick={closeNavbar}
               >
                 <i className="bi bi-house-fill me-1"></i>Home
               </Link>
@@ -92,6 +128,7 @@ const Navbar = () => {
               <Link 
                 className={`nav-link text-white ${isActive('/about') ? 'active fw-bold' : ''}`}
                 to="/about"
+                onClick={closeNavbar}
               >
                 <i className="bi bi-info-circle-fill me-1"></i>About
               </Link>
@@ -100,6 +137,7 @@ const Navbar = () => {
               <Link 
                 className={`nav-link text-white ${isActive('/contact') ? 'active fw-bold' : ''}`}
                 to="/contact"
+                onClick={closeNavbar}
               >
                 <i className="bi bi-envelope-fill me-1"></i>Contact
               </Link>
@@ -124,7 +162,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/grade6"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     Grade 6
                   </Link>
@@ -133,7 +174,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/grade7"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     Grade 7
                   </Link>
@@ -142,7 +186,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/grade8"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     Grade 8
                   </Link>
@@ -151,7 +198,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/grade9"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     Grade 9
                   </Link>
@@ -160,7 +210,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/grade10"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     Grade 10
                   </Link>
@@ -169,7 +222,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/grade11"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     Grade 11
                   </Link>
@@ -179,7 +235,10 @@ const Navbar = () => {
                   <Link 
                     className="dropdown-item" 
                     to="/grade/al"
-                    onClick={() => setShowGradesDropdown(false)}
+                    onClick={() => {
+                      setShowGradesDropdown(false);
+                      closeNavbar();
+                    }}
                   >
                     <i className="bi bi-mortarboard-fill me-2 text-success"></i>Advanced Level
                   </Link>
@@ -217,6 +276,7 @@ const Navbar = () => {
                       onClick={() => {
                         setLanguage(langKey);
                         setShowLanguageDropdown(false);
+                        closeNavbar();
                       }}
                     >
                       <i className={`${langConfig.icon} me-2`} 
