@@ -1,9 +1,33 @@
 {
   "name": "teaching-torch-react",
   "version": "1.0.0",
-  "description": "Teaching Torch - Free Educational Resources for Sri Lankan Students",
-  "homepage": "https://github.com/Deadsecnote1/TT-react",
   "private": true,
+  "description": "Teaching Torch - Free Educational Resources for Sri Lankan Students",
+  "keywords": [
+    "education",
+    "sri-lanka",
+    "teaching",
+    "resources",
+    "react"
+  ],
+  "homepage": "https://github.com/Deadsecnote1/TT-react",
+  "bugs": {
+    "url": "https://github.com/Deadsecnote1/TT-react/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Deadsecnote1/TT-react.git"
+  },
+  "license": "MIT",
+  "author": "Teaching Torch Team",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
@@ -16,13 +40,8 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+  "devDependencies": {
+    "gh-pages": "^6.1.0"
   },
   "eslintConfig": {
     "extends": [
@@ -41,17 +60,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "gh-pages": "^6.1.0"
-  },
-  "keywords": [
-    "education",
-    "sri-lanka",
-    "teaching",
-    "resources",
-    "react"
-  ],
-  "author": "Teaching Torch Team",
-  "license": "MIT"
+  }
 }

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
+import { isGoogleDriveLink, extractFileId } from '../../utils/googleDrive';
+import { isYouTubeLink, extractYouTubeId } from '../../utils/youtube';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -9,11 +11,17 @@ const AdminDashboard = () => {
   const [selectedGrade, setSelectedGrade] = useState('grade6');
   const [selectedSubject, setSelectedSubject] = useState('mathematics');
   const [selectedResourceType, setSelectedResourceType] = useState('textbook');
+  const [selectedPaperType, setSelectedPaperType] = useState('term'); // 'term' or 'chapter'
+  const [selectedPaperCategory, setSelectedPaperCategory] = useState('term1'); // For term papers: term1, term2, term3. For chapter papers: chapter name
   const [selectedLanguages, setSelectedLanguages] = useState(['english']);
   const [fileList, setFileList] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [recentUploads, setRecentUploads] = useState([]);
+  const [driveLink, setDriveLink] = useState('');
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceDescription, setResourceDescription] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   
   const stats = getStats();
 
@@ -80,10 +88,25 @@ const AdminDashboard = () => {
     setRecentUploads(updatedRecent);
   };
 
-  const handleUpload = async () => {
-    if (fileList.length === 0) {
-      alert('Please select files to upload');
+  const handleAddDriveLink = () => {
+    if (!driveLink.trim()) {
+      alert('Please enter a Google Drive link or YouTube URL');
       return;
+    }
+
+    // Check if it's a video resource type
+    if (selectedResourceType === 'videos') {
+      // Allow YouTube links for videos
+      if (!isYouTubeLink(driveLink) && !isGoogleDriveLink(driveLink)) {
+        alert('Please enter a valid YouTube URL or Google Drive link.\n\nYouTube: https://www.youtube.com/watch?v=VIDEO_ID\nGoogle Drive: https://drive.google.com/file/d/FILE_ID/view');
+        return;
+      }
+    } else {
+      // For other resources, only Google Drive
+      if (!isGoogleDriveLink(driveLink)) {
+        alert('Please enter a valid Google Drive link.\n\nExample: https://drive.google.com/file/d/FILE_ID/view');
+        return;
+      }
     }
 
     if (selectedLanguages.length === 0) {
@@ -91,48 +114,73 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Reset progress
-    setUploadProgress(0);
+    if (!resourceTitle.trim()) {
+      alert('Please enter a title for this resource');
+      return;
+    }
 
-    // Process files
-    const processedFiles = fileList.map(file => ({
-      name: file.name,
-      size: file.size,
-      type: file.type,
+    // Extract file/video ID to verify
+    let fileId = null;
+    if (selectedResourceType === 'videos' && isYouTubeLink(driveLink)) {
+      fileId = extractYouTubeId(driveLink);
+      if (!fileId) {
+        alert('Could not extract video ID from the YouTube URL. Please check the link format.');
+        return;
+      }
+    } else {
+      fileId = extractFileId(driveLink);
+      if (!fileId) {
+        alert('Could not extract file ID from the Google Drive link. Please check the link format.');
+        return;
+      }
+    }
+
+    // Process the resource
+    const processedResource = {
+      id: Date.now().toString() + Math.random(),
+      driveLink: selectedResourceType === 'videos' && isYouTubeLink(driveLink) ? null : driveLink.trim(),
+      youtubeUrl: selectedResourceType === 'videos' && isYouTubeLink(driveLink) ? driveLink.trim() : null,
+      url: driveLink.trim(), // General URL field
+      fileId: fileId,
+      title: resourceTitle.trim(),
+      description: resourceDescription.trim() || '',
+      name: resourceTitle.trim(),
       grade: selectedGrade,
       subject: selectedSubject,
       resourceType: selectedResourceType,
       languages: selectedLanguages,
       uploadDate: new Date().toISOString(),
-      id: Date.now() + Math.random()
-    }));
+      addedBy: 'admin',
+      // For papers, add paper type and category
+      ...(selectedResourceType === 'papers' && {
+        paperType: selectedPaperType,
+        paperCategory: selectedPaperCategory,
+        school: schoolName.trim() || 'Unknown School'
+      })
+    };
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          
-          // Save to localStorage
-          saveToLocalStorage(processedFiles);
-          
-          // Success notification
-          alert(`✅ Successfully uploaded ${fileList.length} file(s)!\n\n` +
-                `Grade: ${selectedGrade}\n` +
-                `Subject: ${selectedSubject}\n` +
-                `Type: ${selectedResourceType}\n` +
-                `Languages: ${selectedLanguages.join(', ')}`);
-          
-          // Reset form
-          setFileList([]);
-          setUploadProgress(0);
-          document.getElementById('fileInput').value = '';
-          
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    // Save to localStorage
+    saveToLocalStorage([processedResource]);
+    
+    // Success notification
+    alert(`✅ Successfully added resource!\n\n` +
+          `Title: ${resourceTitle}\n` +
+          `Grade: ${selectedGrade}\n` +
+          `Subject: ${selectedSubject}\n` +
+          `Type: ${selectedResourceType}\n` +
+          `Languages: ${selectedLanguages.join(', ')}\n\n` +
+          `Make sure the Google Drive file is set to "Anyone with the link can view"`);
+    
+    // Reset form
+    setDriveLink('');
+    setResourceTitle('');
+    setResourceDescription('');
+    setSelectedLanguages(['english']);
+    setSchoolName('');
+    if (selectedResourceType === 'papers') {
+      setSelectedPaperType('term');
+      setSelectedPaperCategory('term1');
+    }
   };
 
   const handleDeleteSelected = () => {
@@ -142,6 +190,21 @@ const AdminDashboard = () => {
       setUploadedFiles([]);
       setRecentUploads([]);
       alert('✅ All files deleted successfully!');
+    }
+  };
+
+  const handleDeleteResource = (resourceId) => {
+    if (window.confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
+      const updatedFiles = uploadedFiles.filter(file => file.id !== resourceId);
+      localStorage.setItem('teachingTorch_uploadedFiles', JSON.stringify(updatedFiles));
+      setUploadedFiles(updatedFiles);
+      
+      // Update recent uploads
+      const updatedRecent = recentUploads.filter(file => file.id !== resourceId);
+      localStorage.setItem('teachingTorch_recentUploads', JSON.stringify(updatedRecent));
+      setRecentUploads(updatedRecent);
+      
+      alert('✅ Resource deleted successfully!');
     }
   };
 
@@ -362,7 +425,6 @@ const AdminDashboard = () => {
                           <option value="science">Science</option>
                           <option value="english">English</option>
                           <option value="history">History</option>
-                          <option value="geography">Geography</option>
                         </select>
                       </div>
                       <div className="col-md-4">
@@ -370,7 +432,15 @@ const AdminDashboard = () => {
                         <select 
                           className="form-select"
                           value={selectedResourceType}
-                          onChange={(e) => setSelectedResourceType(e.target.value)}
+                          onChange={(e) => {
+                            setSelectedResourceType(e.target.value);
+                            // Reset paper-specific fields when changing resource type
+                            if (e.target.value !== 'papers') {
+                              setSelectedPaperType('term');
+                              setSelectedPaperCategory('term1');
+                              setSchoolName('');
+                            }
+                          }}
                         >
                           <option value="textbook">Textbook</option>
                           <option value="notes">Notes</option>
@@ -379,6 +449,65 @@ const AdminDashboard = () => {
                         </select>
                       </div>
                     </div>
+
+                    {/* Paper Type Selection (only for papers) */}
+                    {selectedResourceType === 'papers' && (
+                      <div className="row g-3 mb-4">
+                        <div className="col-md-6">
+                          <label className="form-label">Paper Type</label>
+                          <select 
+                            className="form-select"
+                            value={selectedPaperType}
+                            onChange={(e) => {
+                              setSelectedPaperType(e.target.value);
+                              // Reset category when changing paper type
+                              if (e.target.value === 'term') {
+                                setSelectedPaperCategory('term1');
+                              } else {
+                                setSelectedPaperCategory('chapter1');
+                              }
+                            }}
+                          >
+                            <option value="term">Term Papers</option>
+                            <option value="chapter">Chapter Papers</option>
+                          </select>
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">
+                            {selectedPaperType === 'term' ? 'Term' : 'Chapter'}
+                          </label>
+                          {selectedPaperType === 'term' ? (
+                            <select 
+                              className="form-select"
+                              value={selectedPaperCategory}
+                              onChange={(e) => setSelectedPaperCategory(e.target.value)}
+                            >
+                              <option value="term1">1st Term</option>
+                              <option value="term2">2nd Term</option>
+                              <option value="term3">3rd Term</option>
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              className="form-control"
+                              placeholder="e.g., Chapter 1, Chapter 2, etc."
+                              value={selectedPaperCategory}
+                              onChange={(e) => setSelectedPaperCategory(e.target.value)}
+                            />
+                          )}
+                        </div>
+                        <div className="col-md-12">
+                          <label className="form-label">School Name (Optional)</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g., Royal College, Ananda College"
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Language Selection */}
                     <div className="mb-4">
@@ -408,82 +537,146 @@ const AdminDashboard = () => {
                       </div>
                     </div>
 
-                    {/* File Upload Area */}
-                    <div 
-                      className="upload-area p-4 border-2 border-dashed border-success rounded text-center"
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                    >
-                      <i className="bi bi-cloud-upload text-success" style={{ fontSize: '3rem' }}></i>
-                      <h5 className="mt-3">Drop files here or click to browse</h5>
-                      <p className="text-muted">Support PDF, DOC, DOCX, MP4, and image files</p>
-                      <input 
-                        type="file" 
-                        multiple 
-                        className="form-control d-none" 
-                        id="fileInput"
-                        onChange={handleFileSelect}
-                        accept=".pdf,.doc,.docx,.mp4,.jpg,.jpeg,.png"
-                      />
-                      <label htmlFor="fileInput" className="btn btn-success">
-                        <i className="bi bi-folder me-2"></i>
-                        Choose Files
+                    {/* Link Input (Google Drive or YouTube) */}
+                    <div className="mb-4">
+                      <label className="form-label">
+                        <i className="bi bi-link-45deg me-2"></i>
+                        {selectedResourceType === 'videos' ? 'YouTube URL or Google Drive Link' : 'Google Drive Link'} <span className="text-danger">*</span>
                       </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder={selectedResourceType === 'videos' 
+                          ? "https://www.youtube.com/watch?v=VIDEO_ID or Google Drive link"
+                          : "https://drive.google.com/file/d/FILE_ID/view"}
+                        value={driveLink}
+                        onChange={(e) => setDriveLink(e.target.value)}
+                      />
+                      <div className="form-text">
+                        <small>
+                          <i className="bi bi-info-circle me-1"></i>
+                          {selectedResourceType === 'videos' 
+                            ? 'Paste YouTube URL or Google Drive link. For YouTube: Use the full watch URL.'
+                            : 'Paste the Google Drive share link here. Make sure the file is set to "Anyone with the link can view"'}
+                        </small>
+                      </div>
+                      {driveLink && selectedResourceType === 'videos' && isYouTubeLink(driveLink) && (
+                        <div className="alert alert-success mt-2 mb-0">
+                          <small>
+                            <i className="bi bi-youtube me-1"></i>
+                            Valid YouTube URL detected! Video ID: {extractYouTubeId(driveLink)}
+                          </small>
+                        </div>
+                      )}
+                      {driveLink && selectedResourceType === 'videos' && !isYouTubeLink(driveLink) && !isGoogleDriveLink(driveLink) && (
+                        <div className="alert alert-warning mt-2 mb-0">
+                          <small>
+                            <i className="bi bi-exclamation-triangle me-1"></i>
+                            Please enter a valid YouTube URL or Google Drive link
+                          </small>
+                        </div>
+                      )}
+                      {driveLink && selectedResourceType !== 'videos' && !isGoogleDriveLink(driveLink) && (
+                        <div className="alert alert-warning mt-2 mb-0">
+                          <small>
+                            <i className="bi bi-exclamation-triangle me-1"></i>
+                            This doesn't look like a valid Google Drive link
+                          </small>
+                        </div>
+                      )}
+                      {driveLink && selectedResourceType !== 'videos' && isGoogleDriveLink(driveLink) && (
+                        <div className="alert alert-success mt-2 mb-0">
+                          <small>
+                            <i className="bi bi-check-circle me-1"></i>
+                            Valid Google Drive link detected! File ID: {extractFileId(driveLink)}
+                          </small>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Selected Files */}
-                    {fileList.length > 0 && (
-                      <div className="mt-3">
-                        <h6>Selected Files ({fileList.length})</h6>
-                        <ul className="list-group">
-                          {fileList.map((file, index) => (
-                            <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
-                              <span>
-                                <i className="bi bi-file-earmark me-2"></i>
-                                {file.name}
-                              </span>
-                              <small className="text-muted">{(file.size / 1024 / 1024).toFixed(2)} MB</small>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {/* Resource Title */}
+                    <div className="mb-4">
+                      <label className="form-label">
+                        <i className="bi bi-type me-2"></i>
+                        Resource Title <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g., Grade 6 Mathematics Textbook - Sinhala"
+                        value={resourceTitle}
+                        onChange={(e) => setResourceTitle(e.target.value)}
+                      />
+                    </div>
 
-                    {/* Upload Progress */}
-                    {uploadProgress > 0 && (
-                      <div className="mt-3">
-                        <div className="progress">
-                          <div 
-                            className="progress-bar progress-bar-striped progress-bar-animated" 
-                            style={{ width: `${uploadProgress}%` }}
-                          >
-                            {uploadProgress}%
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* Resource Description (Optional) */}
+                    <div className="mb-4">
+                      <label className="form-label">
+                        <i className="bi bi-card-text me-2"></i>
+                        Description (Optional)
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Additional information about this resource..."
+                        value={resourceDescription}
+                        onChange={(e) => setResourceDescription(e.target.value)}
+                      />
+                    </div>
 
-                    {/* Upload Button */}
-                    <div className="mt-3 d-flex gap-2">
+                    {/* Add Resource Button */}
+                    <div className="d-flex gap-2">
                       <button 
                         className="btn btn-primary"
-                        onClick={handleUpload}
-                        disabled={fileList.length === 0 || uploadProgress > 0}
+                        onClick={handleAddDriveLink}
+                        disabled={!driveLink.trim() || !resourceTitle.trim() || selectedLanguages.length === 0}
                       >
-                        <i className="bi bi-upload me-2"></i>
-                        Upload Files
+                        <i className="bi bi-plus-circle me-2"></i>
+                        Add Resource
                       </button>
                       <button 
                         className="btn btn-outline-secondary"
                         onClick={() => {
-                          setFileList([]);
-                          document.getElementById('fileInput').value = '';
+                          setDriveLink('');
+                          setResourceTitle('');
+                          setResourceDescription('');
+                          setSelectedLanguages(['english']);
+                          setSchoolName('');
+                          if (selectedResourceType === 'papers') {
+                            setSelectedPaperType('term');
+                            setSelectedPaperCategory('term1');
+                          }
                         }}
-                        disabled={uploadProgress > 0}
                       >
                         <i className="bi bi-x-circle me-2"></i>
                         Clear
                       </button>
+                    </div>
+
+                    {/* Instructions */}
+                    <div className="alert alert-info mt-4">
+                      <h6 className="mb-2">
+                        <i className="bi bi-question-circle me-2"></i>
+                        How to Add Resources:
+                      </h6>
+                      {selectedResourceType === 'videos' ? (
+                        <ol className="mb-0 small">
+                          <li><strong>For YouTube:</strong> Copy the video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID)</li>
+                          <li><strong>For Google Drive:</strong> Upload video, share as "Anyone with the link", copy link</li>
+                          <li>Paste the URL in the field above</li>
+                          <li>Fill in title, description, and select language(s)</li>
+                          <li>Click "Add Resource"</li>
+                        </ol>
+                      ) : (
+                        <ol className="mb-0 small">
+                          <li>Upload your PDF to Google Drive</li>
+                          <li>Right-click the file → Share → Change to "Anyone with the link"</li>
+                          <li>Copy the share link</li>
+                          <li>Paste it in the field above</li>
+                          <li>Fill in the title and select language(s)</li>
+                          <li>Click "Add Resource"</li>
+                        </ol>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -502,17 +695,37 @@ const AdminDashboard = () => {
                     </button>
                   </div>
                   <div className="card-body">
-                    <div className="file-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      {Object.entries(fileGroups).length > 0 ? (
-                        Object.entries(fileGroups).map(([path, files]) => (
-                          <div key={path} className="d-flex justify-content-between align-items-center p-2 border-bottom">
-                            <div>
-                              <i className="bi bi-folder me-2 text-warning"></i>
-                              <small>{path}</small>
+                    <div className="file-list" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                      {uploadedFiles.length > 0 ? (
+                        <div>
+                          {uploadedFiles.slice().reverse().map((file) => (
+                            <div key={file.id} className="d-flex justify-content-between align-items-center p-2 border-bottom">
+                              <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                <div className="d-flex align-items-center">
+                                  <i className={`bi ${
+                                    file.resourceType === 'textbook' ? 'bi-book' :
+                                    file.resourceType === 'papers' ? 'bi-file-text' :
+                                    file.resourceType === 'notes' ? 'bi-sticky' :
+                                    'bi-play-circle'
+                                  } me-2 text-primary`}></i>
+                                  <small className="text-truncate" style={{ maxWidth: '150px' }} title={file.title || file.name}>
+                                    {file.title || file.name}
+                                  </small>
+                                </div>
+                                <small className="text-muted d-block">
+                                  {file.grade} / {file.subject}
+                                </small>
+                              </div>
+                              <button
+                                className="btn btn-sm btn-outline-danger ms-2"
+                                onClick={() => handleDeleteResource(file.id)}
+                                title="Delete resource"
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
                             </div>
-                            <span className="badge bg-primary rounded-pill">{files.length}</span>
-                          </div>
-                        ))
+                          ))}
+                        </div>
                       ) : (
                         <div className="text-center text-muted">
                           <i className="bi bi-folder-x" style={{ fontSize: '2rem' }}></i>
@@ -538,47 +751,18 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Recent Uploads */}
-                <div className="card mt-3">
-                  <div className="card-header">
-                    <h6>
-                      <i className="bi bi-clock-history me-2"></i>
-                      Recent Uploads ({recentUploads.length})
-                    </h6>
-                  </div>
-                  <div className="card-body">
-                    {recentUploads.length > 0 ? (
-                      <div className="recent-uploads">
-                        {recentUploads.slice(0, 5).map((file, index) => (
-                          <div key={index} className="d-flex align-items-center mb-2 p-2 bg-light rounded">
-                            <i className="bi bi-file-earmark me-2 text-primary"></i>
-                            <div className="flex-grow-1">
-                              <small className="d-block text-truncate" style={{ maxWidth: '150px' }}>
-                                {file.name}
-                              </small>
-                              <small className="text-muted">
-                                {new Date(file.uploadDate).toLocaleDateString()}
-                              </small>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted text-center">No recent uploads</p>
-                    )}
-                  </div>
-                </div>
+                {/* Recent Uploads - Removed to fix overlapping, info is in File Manager */}
               </div>
             </div>
           )}
 
           {/* Info Section */}
           <div className="alert alert-info mt-4">
-            <h5><i className="bi bi-info-circle me-2"></i>File Upload Demo</h5>
+            <h5><i className="bi bi-info-circle me-2"></i>Google Drive Integration</h5>
             <p className="mb-0">
               {activeTab === 'overview' ? 
-                'This dashboard provides an overview of uploaded files and platform statistics.' :
-                '🔹 This is a functional demo that saves files to browser localStorage. Files persist until you clear browser data or delete them.\n🔹 In production, files would be uploaded to a server/cloud storage.\n🔹 Try uploading some sample files to test the functionality!'
+                'This dashboard provides an overview of resources and platform statistics. Resources are stored as Google Drive links.' :
+                '🔹 Resources are stored as Google Drive share links in localStorage.\n🔹 Users can view PDFs directly in the browser or download them.\n🔹 Make sure all Google Drive files are set to "Anyone with the link can view" for public access.\n🔹 No backend server needed - everything works client-side!'
               }
             </p>
           </div>
@@ -597,20 +781,21 @@ const AdminDashboard = () => {
         }
         
         .nav-tabs .nav-link {
-          color: var(--text-secondary);
+          color: #212529 !important;
           border: none;
           background: none;
         }
         
         .nav-tabs .nav-link.active {
-          color: var(--primary);
+          color: var(--primary) !important;
           background-color: var(--card-bg);
           border-bottom: 2px solid var(--primary);
+          font-weight: 600;
         }
         
         .nav-tabs .nav-link:hover {
-          color: var(--primary);
-          background-color: rgba(46, 125, 50, 0.1);
+          color: var(--primary) !important;
+          background-color: rgba(59, 130, 246, 0.08);
         }
 
         .recent-uploads {

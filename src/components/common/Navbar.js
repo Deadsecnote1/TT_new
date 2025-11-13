@@ -208,7 +208,9 @@ const Navbar = () => {
                 </span>
               </button>
               <ul className={`dropdown-menu dropdown-menu-end ${showLanguageDropdown ? 'show' : ''}`}>
-                {Object.entries(languages).map(([langKey, langConfig]) => (
+                {Object.entries(languages)
+                  .filter(([langKey]) => langKey !== 'all') // Remove 'all' option
+                  .map(([langKey, langConfig]) => (
                   <li key={langKey}>
                     <button
                       className={`dropdown-item language-option ${selectedLanguage === langKey ? 'active' : ''}`}

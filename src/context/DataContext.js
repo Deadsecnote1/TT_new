@@ -167,56 +167,25 @@ export const DataProvider = ({ children }) => {
       'al': { name: 'Advanced Level', display: 'A/L', active: true }
     },
     subjects: {
-      'mathematics': { 
-        name: 'Mathematics', 
-        icon: 'bi-calculator',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11']
-      },
-      'science': { 
-        name: 'Science', 
-        icon: 'bi-flask',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11']
-      },
-      'sinhala': { 
-        name: 'Sinhala', 
-        icon: 'bi-book',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11']
-      },
-      'english': { 
-        name: 'English', 
+      'english': {
+        name: 'English',
         icon: 'bi-globe',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11']
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
       },
-      'tamil': { 
-        name: 'Tamil', 
-        icon: 'bi-book-half',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11']
+      'science': {
+        name: 'Science',
+        icon: 'bi-flask',
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
       },
-      'social-studies': { 
-        name: 'Social Studies', 
-        icon: 'bi-geo-alt',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11']
+      'mathematics': {
+        name: 'Mathematics',
+        icon: 'bi-calculator',
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
       },
-      // A/L Subjects
-      'combined-maths': { 
-        name: 'Combined Mathematics', 
-        icon: 'bi-calculator-fill',
-        grades: ['al']
-      },
-      'physics': { 
-        name: 'Physics', 
-        icon: 'bi-atom',
-        grades: ['al']
-      },
-      'chemistry': { 
-        name: 'Chemistry', 
-        icon: 'bi-droplet',
-        grades: ['al']
-      },
-      'biology': { 
-        name: 'Biology', 
-        icon: 'bi-tree',
-        grades: ['al']
+      'history': {
+        name: 'History',
+        icon: 'bi-clock-history',
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
       }
     },
     resources: {},
@@ -402,6 +371,8 @@ export const DataProvider = ({ children }) => {
         });
       });
     });
+
+    stats.totalLanguages = Object.keys(stats.languageBreakdown).length;
 
     return stats;
   }, [state.grades, state.subjects, state.resources, state.videos]);

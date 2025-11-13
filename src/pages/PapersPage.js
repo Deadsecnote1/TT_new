@@ -1,12 +1,28 @@
-import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useLanguage } from '../context/LanguageContext';
+import ResourceCard from '../components/common/ResourceCard';
 
 const PapersPage = () => {
   const { gradeId } = useParams();
+  const [searchParams] = useSearchParams();
+  const selectedSubjectId = searchParams.get('subject');
   const { generateGradePageData } = useData();
   const { selectedLanguage, shouldShowResource, getLanguageIndicator } = useLanguage();
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  // Load uploaded files from localStorage
+  useEffect(() => {
+    const savedFiles = localStorage.getItem('teachingTorch_uploadedFiles');
+    if (savedFiles) {
+      const allFiles = JSON.parse(savedFiles);
+      const papers = allFiles.filter(file => 
+        file.grade === gradeId && file.resourceType === 'papers'
+      );
+      setUploadedFiles(papers);
+    }
+  }, [gradeId]);
 
   // Generate page data
   const pageData = useMemo(() => {
@@ -26,6 +42,47 @@ const PapersPage = () => {
   }
 
   const { grade, subjects } = pageData;
+
+  // Group uploaded papers by subject
+  const getPapersBySubject = () => {
+    const grouped = {};
+    uploadedFiles.forEach(file => {
+      if (!grouped[file.subject]) {
+        grouped[file.subject] = { terms: { term1: [], term2: [], term3: [] }, chapters: {} };
+      }
+      
+      const paperData = {
+        ...file,
+        filename: file.title || file.name,
+        language: file.languages?.[0] || 'english',
+        school: file.school || 'Unknown School'
+      };
+      
+      // Use paperType and paperCategory if available (from admin upload)
+      if (file.paperType === 'term' && file.paperCategory) {
+        const termKey = file.paperCategory; // term1, term2, or term3
+        if (!grouped[file.subject].terms[termKey]) {
+          grouped[file.subject].terms[termKey] = [];
+        }
+        grouped[file.subject].terms[termKey].push(paperData);
+      } else if (file.paperType === 'chapter' && file.paperCategory) {
+        const chapterKey = file.paperCategory;
+        if (!grouped[file.subject].chapters[chapterKey]) {
+          grouped[file.subject].chapters[chapterKey] = [];
+        }
+        grouped[file.subject].chapters[chapterKey].push(paperData);
+      } else {
+        // Fallback: add to term1 if no paperType specified (for backward compatibility)
+        if (!grouped[file.subject].terms.term1) {
+          grouped[file.subject].terms.term1 = [];
+        }
+        grouped[file.subject].terms.term1.push(paperData);
+      }
+    });
+    return grouped;
+  };
+
+  const uploadedPapersBySubject = getPapersBySubject();
 
   // Helper function to format term names
   const formatTermName = (termKey) => {
@@ -65,7 +122,7 @@ const PapersPage = () => {
           // Filter papers by language
           const filteredPapers = papers.filter(paper => shouldShowResource(paper.language));
           
-          if (filteredPapers.length === 0 && selectedLanguage !== 'all') return null;
+          if (filteredPapers.length === 0) return null;
 
           return (
             <div key={termKey} className="term-section mb-4">
@@ -75,31 +132,16 @@ const PapersPage = () => {
               </h6>
               <div className="row g-2">
                 {filteredPapers.map((paper, index) => (
-                  <div key={paper.id || index} className="col-12">
-                    <div className="paper-item-enhanced d-flex align-items-center justify-content-between p-3 border rounded">
-                      <div className="paper-info d-flex align-items-center">
-                        <i className="bi bi-file-earmark-pdf text-danger me-3" style={{ fontSize: '1.5rem' }}></i>
-                        <div>
-                          <h6 className="mb-1">{paper.filename}</h6>
-                          <div className="d-flex align-items-center gap-2">
-                            <small className="text-muted">{paper.school || 'Unknown School'}</small>
-                            <span 
-                              className="language-indicator"
-                              {...getLanguageIndicator(paper.language)}
-                            ></span>
-                            <small className="text-muted">{paper.language}</small>
-                          </div>
-                        </div>
-                      </div>
-                      <a 
-                        href={`/${paper.path}`} 
-                        className="btn btn-sm btn-primary" 
-                        download
-                        onClick={() => console.log(`Downloaded: ${paper.filename}`)}
-                      >
-                        <i className="bi bi-download"></i>
-                      </a>
-                    </div>
+                  <div key={paper.id || index} className="col-12 mb-2">
+                    <ResourceCard
+                      resource={paper}
+                      title={paper.filename || paper.title || paper.name}
+                      description={paper.school ? `School: ${paper.school}` : ''}
+                      language={paper.language}
+                      showLanguageLabel={true}
+                      showViewButton={true}
+                      showDownloadButton={true}
+                    />
                   </div>
                 ))}
               </div>
@@ -129,7 +171,7 @@ const PapersPage = () => {
           // Filter papers by language
           const filteredPapers = papers.filter(paper => shouldShowResource(paper.language));
           
-          if (filteredPapers.length === 0 && selectedLanguage !== 'all') return null;
+          if (filteredPapers.length === 0) return null;
 
           return (
             <div key={chapterKey} className="chapter-section mb-4">
@@ -139,31 +181,16 @@ const PapersPage = () => {
               </h6>
               <div className="row g-2">
                 {filteredPapers.map((paper, index) => (
-                  <div key={paper.id || index} className="col-12">
-                    <div className="paper-item-enhanced d-flex align-items-center justify-content-between p-3 border rounded">
-                      <div className="paper-info d-flex align-items-center">
-                        <i className="bi bi-file-earmark-pdf text-danger me-3" style={{ fontSize: '1.5rem' }}></i>
-                        <div>
-                          <h6 className="mb-1">{paper.filename}</h6>
-                          <div className="d-flex align-items-center gap-2">
-                            <small className="text-muted">{paper.school || 'Unknown School'}</small>
-                            <span 
-                              className="language-indicator"
-                              {...getLanguageIndicator(paper.language)}
-                            ></span>
-                            <small className="text-muted">{paper.language}</small>
-                          </div>
-                        </div>
-                      </div>
-                      <a 
-                        href={`/${paper.path}`} 
-                        className="btn btn-sm btn-primary" 
-                        download
-                        onClick={() => console.log(`Downloaded: ${paper.filename}`)}
-                      >
-                        <i className="bi bi-download"></i>
-                      </a>
-                    </div>
+                  <div key={paper.id || index} className="col-12 mb-2">
+                    <ResourceCard
+                      resource={paper}
+                      title={paper.filename || paper.title || paper.name}
+                      description={paper.school ? `School: ${paper.school}` : ''}
+                      language={paper.language}
+                      showLanguageLabel={true}
+                      showViewButton={true}
+                      showDownloadButton={true}
+                    />
                   </div>
                 ))}
               </div>
@@ -227,17 +254,33 @@ const PapersPage = () => {
           {Object.keys(subjects).map(subjectId => {
             const subject = subjects[subjectId];
             const papers = subject.resources.papers || {};
+            const uploadedPapers = uploadedPapersBySubject[subjectId] || { terms: { term1: [], term2: [], term3: [] }, chapters: {} };
+            
+            // Merge uploaded papers with existing papers
+            const mergedPapers = {
+              terms: {
+                term1: [...(papers.terms?.term1 || []), ...(uploadedPapers.terms?.term1 || [])],
+                term2: [...(papers.terms?.term2 || []), ...(uploadedPapers.terms?.term2 || [])],
+                term3: [...(papers.terms?.term3 || []), ...(uploadedPapers.terms?.term3 || [])]
+              },
+              chapters: { ...(papers.chapters || {}), ...(uploadedPapers.chapters || {}) }
+            };
 
             // Check if any papers match the filter
-            const hasTermPapers = papers.terms && Object.values(papers.terms).some(termPapers => 
+            const hasTermPapers = mergedPapers.terms && Object.values(mergedPapers.terms).some(termPapers => 
               Array.isArray(termPapers) && termPapers.some(paper => shouldShowResource(paper.language))
             );
-            const hasChapterPapers = papers.chapters && Object.values(papers.chapters).some(chapterPapers => 
+            const hasChapterPapers = mergedPapers.chapters && Object.values(mergedPapers.chapters).some(chapterPapers => 
               Array.isArray(chapterPapers) && chapterPapers.some(paper => shouldShowResource(paper.language))
             );
 
+            // Filter by selected subject if specified
+            if (selectedSubjectId && subjectId !== selectedSubjectId) {
+              return null;
+            }
+
             // Skip subject if no papers match filter
-            if (selectedLanguage !== 'all' && !hasTermPapers && !hasChapterPapers) {
+            if (!hasTermPapers && !hasChapterPapers) {
               return null;
             }
 
@@ -266,7 +309,7 @@ const PapersPage = () => {
                           </h5>
                         </div>
                         <div className="card-body">
-                          <TermPapers termPapers={papers.terms} />
+                          <TermPapers termPapers={mergedPapers.terms} />
                         </div>
                       </div>
                     </div>
@@ -282,7 +325,7 @@ const PapersPage = () => {
                           </h5>
                         </div>
                         <div className="card-body">
-                          <ChapterPapers chapterPapers={papers.chapters} />
+                          <ChapterPapers chapterPapers={mergedPapers.chapters} />
                         </div>
                       </div>
                     </div>

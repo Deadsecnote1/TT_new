@@ -5,7 +5,7 @@ const LanguageContext = createContext();
 
 // Language Provider Component
 export const LanguageProvider = ({ children }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState('all');
+  const [selectedLanguage, setSelectedLanguage] = useState('english');
 
   // Language configurations
   const languages = {
@@ -37,7 +37,7 @@ export const LanguageProvider = ({ children }) => {
 
   // Initialize language on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('selectedLanguage') || 'all';
+    const savedLanguage = localStorage.getItem('selectedLanguage') || 'english';
     setSelectedLanguage(savedLanguage);
   }, []);
 
@@ -67,13 +67,11 @@ export const LanguageProvider = ({ children }) => {
 
   // Filter function for resources
   const shouldShowResource = (resourceLanguage) => {
-    if (selectedLanguage === 'all') return true;
     return resourceLanguage === selectedLanguage;
   };
 
   // Filter array of items by language
   const filterByLanguage = (items, getLanguage) => {
-    if (selectedLanguage === 'all') return items;
     return items.filter(item => {
       const itemLanguage = typeof getLanguage === 'function' 
         ? getLanguage(item) 

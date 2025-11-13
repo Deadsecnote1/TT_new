@@ -1,12 +1,31 @@
-import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useLanguage } from '../context/LanguageContext';
+import { extractYouTubeId, getYouTubeThumbnail, isYouTubeLink } from '../utils/youtube';
+import { getEmbedUrl, isGoogleDriveLink } from '../utils/googleDrive';
 
 const VideosPage = () => {
   const { gradeId } = useParams();
+  const [searchParams] = useSearchParams();
+  const selectedSubjectId = searchParams.get('subject');
   const { generateGradePageData } = useData();
   const { selectedLanguage, shouldShowResource, getLanguageIndicator } = useLanguage();
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [showPlayer, setShowPlayer] = useState(false);
+
+  // Load uploaded files from localStorage - MUST be before any conditional returns
+  useEffect(() => {
+    const savedFiles = localStorage.getItem('teachingTorch_uploadedFiles');
+    if (savedFiles) {
+      const allFiles = JSON.parse(savedFiles);
+      const videos = allFiles.filter(file => 
+        file.grade === gradeId && file.resourceType === 'videos'
+      );
+      setUploadedFiles(videos);
+    }
+  }, [gradeId]);
 
   // Generate page data
   const pageData = useMemo(() => {
@@ -27,11 +46,31 @@ const VideosPage = () => {
 
   const { grade, subjects } = pageData;
 
-  // Helper function to extract YouTube video ID
-  const extractYouTubeId = (url) => {
-    const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?([^&\n?#]+)/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
+  const handlePlayVideo = (video, videoUrl) => {
+    const youtubeId = extractYouTubeId(videoUrl);
+    if (youtubeId) {
+      setActiveVideo({
+        title: video.title,
+        embedUrl: `https://www.youtube.com/embed/${youtubeId}?autoplay=1`
+      });
+      setShowPlayer(true);
+      return;
+    }
+
+    if (isGoogleDriveLink(videoUrl)) {
+      const embedUrl = getEmbedUrl(videoUrl);
+      if (embedUrl) {
+        setActiveVideo({
+          title: video.title,
+          embedUrl
+        });
+        setShowPlayer(true);
+        return;
+      }
+    }
+
+    // Fallback: open in new tab
+    window.open(videoUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Generate videos grid component
@@ -49,7 +88,7 @@ const VideosPage = () => {
     // Filter videos by language
     const filteredVideos = videos.filter(video => shouldShowResource(video.language));
 
-    if (filteredVideos.length === 0 && selectedLanguage !== 'all') {
+    if (filteredVideos.length === 0) {
       return (
         <div className="text-center py-5">
           <i className="bi bi-search text-muted" style={{ fontSize: '4rem' }}></i>
@@ -69,8 +108,9 @@ const VideosPage = () => {
       <div className="videos-grid">
         <div className="row g-4">
           {filteredVideos.map((video, index) => {
-            const videoId = extractYouTubeId(video.url);
-            const thumbnail = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+            const videoUrl = video.driveLink || video.url || video.youtubeUrl;
+            const videoId = extractYouTubeId(videoUrl);
+            const thumbnail = getYouTubeThumbnail(videoUrl);
 
             return (
               <div key={video.id || index} className="col-md-6 col-lg-4">
@@ -148,18 +188,13 @@ const VideosPage = () => {
 
                       {/* Video Actions */}
                       <div className="video-actions mt-3">
-                        <a 
-                          href={video.url} 
-                          className="btn btn-danger btn-sm w-100" 
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            console.log(`Video watched: ${video.title}`);
-                            // Track video view
-                          }}
+                        <button
+                          className={`btn btn-sm w-100 ${isYouTubeLink(videoUrl) ? 'btn-danger' : 'btn-primary'}`}
+                          onClick={() => handlePlayVideo(video, videoUrl)}
                         >
-                          <i className="bi bi-youtube me-1"></i>Watch on YouTube
-                        </a>
+                          <i className="bi bi-play-circle me-1"></i>
+                          Play Video
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -202,22 +237,20 @@ const VideosPage = () => {
       </section>
 
       {/* Language Filter Info */}
-      {selectedLanguage !== 'all' && (
-        <section className="py-2 bg-info bg-opacity-10">
-          <div className="container">
-            <div className="text-center">
-              <small className="text-info">
-                <i className="bi bi-filter me-1"></i>
-                Showing videos in: <strong>
-                  {selectedLanguage === 'sinhala' && 'සිංහල (Sinhala)'}
-                  {selectedLanguage === 'tamil' && 'தமிழ் (Tamil)'}
-                  {selectedLanguage === 'english' && 'English'}
-                </strong>
-              </small>
-            </div>
+      <section className="py-2 bg-info bg-opacity-10">
+        <div className="container">
+          <div className="text-center">
+            <small className="text-info">
+              <i className="bi bi-filter me-1"></i>
+              Showing videos in: <strong>
+                {selectedLanguage === 'sinhala' && 'සිංහල (Sinhala)'}
+                {selectedLanguage === 'tamil' && 'தமிழ் (Tamil)'}
+                {selectedLanguage === 'english' && 'English'}
+              </strong>
+            </small>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Videos Content */}
       <section className="py-5">
@@ -225,12 +258,30 @@ const VideosPage = () => {
           {Object.keys(subjects).map(subjectId => {
             const subject = subjects[subjectId];
             const videos = subject.videos || [];
+            
+            // Get uploaded videos for this subject
+            const uploadedVideos = uploadedFiles.filter(file => file.subject === subjectId);
+            const uploadedVideosFormatted = uploadedVideos.map(file => ({
+              ...file,
+              title: file.title || file.name,
+              language: file.languages?.[0] || 'english',
+              url: file.driveLink || file.youtubeUrl || file.url,
+              addedDate: file.uploadDate
+            }));
+            
+            // Merge videos
+            const mergedVideos = [...videos, ...uploadedVideosFormatted];
+
+            // Filter by selected subject if specified
+            if (selectedSubjectId && subjectId !== selectedSubjectId) {
+              return null;
+            }
 
             // Check if any videos match the filter
-            const hasFilteredVideos = videos.some(video => shouldShowResource(video.language));
+            const hasFilteredVideos = mergedVideos.some(video => shouldShowResource(video.language));
 
             // Skip subject if no videos match filter
-            if (selectedLanguage !== 'all' && !hasFilteredVideos) {
+            if (!hasFilteredVideos) {
               return null;
             }
 
@@ -248,7 +299,7 @@ const VideosPage = () => {
                   </div>
                 </div>
 
-                <VideosGrid videos={videos} />
+                <VideosGrid videos={mergedVideos} />
               </div>
             );
           })}
@@ -267,7 +318,6 @@ const VideosPage = () => {
 
           {/* No Results for Filter */}
           {Object.keys(subjects).length > 0 && 
-           selectedLanguage !== 'all' && 
            !Object.values(subjects).some(subject => 
              (subject.videos || []).some(video => shouldShowResource(video.language))
            ) && (
@@ -297,6 +347,106 @@ const VideosPage = () => {
           </Link>
         </div>
       </section>
+
+      {/* Video Player Modal */}
+      {showPlayer && activeVideo && (
+        <div
+          className="modal fade show d-block"
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1050
+          }}
+          onClick={() => setShowPlayer(false)}
+        >
+          <div
+            className="modal-dialog modal-xl modal-dialog-centered"
+            style={{ margin: '2rem auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-play-circle text-danger me-2"></i>
+                  {activeVideo.title}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowPlayer(false)}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body p-0">
+                <div className="ratio ratio-16x9">
+                  <iframe
+                    title={activeVideo.title}
+                    src={activeVideo.embedUrl}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ border: 'none' }}
+                  ></iframe>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+ 
+      <style jsx>{`
+        .video-thumbnail {
+          position: relative;
+          overflow: hidden;
+          border-radius: 0.5rem;
+          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        .video-thumbnail img {
+          transition: transform 0.3s ease;
+        }
+
+        .video-thumbnail:hover img {
+          transform: scale(1.05);
+        }
+
+        .placeholder-thumbnail {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 0.5rem;
+          z-index: 1;
+        }
+
+        .play-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2;
+        }
+
+        .play-button {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .modal.show {
+          display: block !important;
+        }
+      `}</style>
     </div>
   );
 };

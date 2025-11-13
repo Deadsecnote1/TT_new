@@ -1,12 +1,28 @@
-import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useLanguage } from '../context/LanguageContext';
+import ResourceCard from '../components/common/ResourceCard';
 
 const NotesPage = () => {
   const { gradeId } = useParams();
+  const [searchParams] = useSearchParams();
+  const selectedSubjectId = searchParams.get('subject');
   const { generateGradePageData } = useData();
-  const { selectedLanguage, shouldShowResource, getLanguageIndicator } = useLanguage();
+  const { selectedLanguage, shouldShowResource } = useLanguage();
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  // Load uploaded files from localStorage
+  useEffect(() => {
+    const savedFiles = localStorage.getItem('teachingTorch_uploadedFiles');
+    if (savedFiles) {
+      const allFiles = JSON.parse(savedFiles);
+      const notes = allFiles.filter(file => 
+        file.grade === gradeId && file.resourceType === 'notes'
+      );
+      setUploadedFiles(notes);
+    }
+  }, [gradeId]);
 
   // Generate page data
   const pageData = useMemo(() => {
@@ -72,16 +88,16 @@ const NotesPage = () => {
       shouldShowResource(note.language)
     );
 
-    if (filteredNotes.length === 0 && selectedLanguage !== 'all') {
+    if (filteredNotes.length === 0) {
       return (
         <div className="text-center py-5">
           <i className="bi bi-search text-muted" style={{ fontSize: '4rem' }}></i>
           <h5 className="mt-3 text-muted">No notes found</h5>
           <p className="text-muted">
             No notes available in{' '}
-            {selectedLanguage === 'sinhala' && 'Sinhala'}
-            {selectedLanguage === 'tamil' && 'Tamil'}
-            {selectedLanguage === 'english' && 'English'}
+            {selectedLanguage === 'sinhala' ? 'Sinhala' : 
+             selectedLanguage === 'tamil' ? 'Tamil' : 
+             selectedLanguage === 'english' ? 'English' : 'the selected language'}
             {' '}for this subject.
           </p>
         </div>
@@ -101,12 +117,6 @@ const NotesPage = () => {
                         <div className="note-icon">
                           <i className="bi bi-file-pdf text-danger" style={{ fontSize: '2rem' }}></i>
                         </div>
-                        <div className="language-badge">
-                          <span 
-                            className="language-indicator"
-                            {...getLanguageIndicator(note.language)}
-                          ></span>
-                        </div>
                       </div>
                     </div>
 
@@ -116,26 +126,30 @@ const NotesPage = () => {
                       </h6>
                       <div className="note-meta mb-3">
                         <small className="text-muted d-block">{note.filename}</small>
-                        <small className="text-muted d-block">{formatFileSize(note.size)}</small>
-                        <small className="text-muted d-block">
-                          <span 
-                            className="language-indicator me-1"
-                            {...getLanguageIndicator(note.language)}
-                          ></span>
-                          {note.language.charAt(0).toUpperCase() + note.language.slice(1)}
-                        </small>
                       </div>
                     </div>
 
                     <div className="note-actions mt-auto">
-                      <a 
-                        href={`/${note.path}`} 
-                        className="btn btn-primary btn-sm w-100" 
-                        download
-                        onClick={() => console.log(`Downloaded note: ${note.filename}`)}
-                      >
-                        <i className="bi bi-download me-1"></i>Download Notes
-                      </a>
+                      {note.driveLink || note.url ? (
+                        <ResourceCard
+                          resource={{
+                            ...note,
+                            driveLink: note.driveLink || note.url || note.path
+                          }}
+                          title={formatChapterName(note.chapter || noteKey)}
+                          description={note.filename}
+                          showViewButton={true}
+                          showDownloadButton={true}
+                        />
+                      ) : (
+                        <a 
+                          href={`/${note.path}`} 
+                          className="btn btn-primary btn-sm w-100" 
+                          download
+                        >
+                          <i className="bi bi-download me-1"></i>Download Notes
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -184,9 +198,9 @@ const NotesPage = () => {
               <small className="text-info">
                 <i className="bi bi-filter me-1"></i>
                 Showing notes in: <strong>
-                  {selectedLanguage === 'sinhala' && 'සිංහල (Sinhala)'}
-                  {selectedLanguage === 'tamil' && 'தமிழ் (Tamil)'}
-                  {selectedLanguage === 'english' && 'English'}
+                  {selectedLanguage === 'sinhala' ? 'සිංහල (Sinhala)' : 
+                   selectedLanguage === 'tamil' ? 'தமிழ் (Tamil)' : 
+                   selectedLanguage === 'english' ? 'English' : 'All Languages'}
                 </strong>
               </small>
             </div>
@@ -200,12 +214,32 @@ const NotesPage = () => {
           {Object.keys(subjects).map(subjectId => {
             const subject = subjects[subjectId];
             const notes = subject.resources.notes || {};
+            
+            // Get uploaded notes for this subject
+            const uploadedNotes = uploadedFiles.filter(file => file.subject === subjectId);
+            const uploadedNotesObj = {};
+            uploadedNotes.forEach((file, index) => {
+              uploadedNotesObj[`uploaded_${index}`] = {
+                ...file,
+                filename: file.title || file.name,
+                language: file.languages?.[0] || 'english',
+                chapter: file.description || 'Uploaded Note'
+              };
+            });
+            
+            // Merge notes
+            const mergedNotes = { ...notes, ...uploadedNotesObj };
+
+            // Filter by selected subject if specified
+            if (selectedSubjectId && subjectId !== selectedSubjectId) {
+              return null;
+            }
 
             // Check if any notes match the filter
-            const hasFilteredNotes = Object.values(notes).some(note => shouldShowResource(note.language));
+            const hasFilteredNotes = Object.values(mergedNotes).some(note => shouldShowResource(note.language));
 
             // Skip subject if no notes match filter
-            if (selectedLanguage !== 'all' && !hasFilteredNotes) {
+            if (!hasFilteredNotes) {
               return null;
             }
 
@@ -223,7 +257,7 @@ const NotesPage = () => {
                   </div>
                 </div>
 
-                <NotesGrid notes={notes} />
+                <NotesGrid notes={mergedNotes} />
               </div>
             );
           })}
@@ -242,7 +276,6 @@ const NotesPage = () => {
 
           {/* No Results for Filter */}
           {Object.keys(subjects).length > 0 && 
-           selectedLanguage !== 'all' && 
            !Object.values(subjects).some(subject => 
              Object.values(subject.resources.notes || {}).some(note => shouldShowResource(note.language))
            ) && (
@@ -251,9 +284,9 @@ const NotesPage = () => {
               <h4 className="mt-3 text-muted">No notes found</h4>
               <p className="text-muted">
                 No notes available in{' '}
-                {selectedLanguage === 'sinhala' && 'Sinhala'}
-                {selectedLanguage === 'tamil' && 'Tamil'}
-                {selectedLanguage === 'english' && 'English'}
+                {selectedLanguage === 'sinhala' ? 'Sinhala' : 
+                 selectedLanguage === 'tamil' ? 'Tamil' : 
+                 selectedLanguage === 'english' ? 'English' : 'the selected language'}
                 {' '}for this grade.
               </p>
               <Link to={`/grade/${gradeId}`} className="btn btn-primary">
