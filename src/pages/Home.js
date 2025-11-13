@@ -34,10 +34,10 @@ const Home = () => {
       {/* Grades Section */}
       <section className="py-5" id="grades">
         <div className="container">
-          <h2 className="text-center mb-5">Choose Your Grade</h2>
-          <div className="row g-4">
+          <h2 className="text-center mb-4 mb-md-5">Choose Your Grade</h2>
+          <div className="row g-3 g-md-4">
             {/* Grade 6 */}
-            <div className="col-md-4 col-sm-6">
+            <div className="col-6 col-md-4 col-sm-6">
               <Link to="/grade/grade6" className="grade-card">
                 <div className="grade-icon">6</div>
                 <h5>Grade 6</h5>
@@ -47,7 +47,7 @@ const Home = () => {
             </div>
 
             {/* Grade 7 */}
-            <div className="col-md-4 col-sm-6">
+            <div className="col-6 col-md-4 col-sm-6">
               <Link to="/grade/grade7" className="grade-card">
                 <div className="grade-icon">7</div>
                 <h5>Grade 7</h5>
@@ -57,7 +57,7 @@ const Home = () => {
             </div>
 
             {/* Grade 8 */}
-            <div className="col-md-4 col-sm-6">
+            <div className="col-6 col-md-4 col-sm-6">
               <Link to="/grade/grade8" className="grade-card">
                 <div className="grade-icon">8</div>
                 <h5>Grade 8</h5>
@@ -67,7 +67,7 @@ const Home = () => {
             </div>
 
             {/* Grade 9 */}
-            <div className="col-md-4 col-sm-6">
+            <div className="col-6 col-md-4 col-sm-6">
               <Link to="/grade/grade9" className="grade-card">
                 <div className="grade-icon">9</div>
                 <h5>Grade 9</h5>
@@ -77,7 +77,7 @@ const Home = () => {
             </div>
 
             {/* Grade 10 */}
-            <div className="col-md-4 col-sm-6">
+            <div className="col-6 col-md-4 col-sm-6">
               <Link to="/grade/grade10" className="grade-card">
                 <div className="grade-icon">10</div>
                 <h5>Grade 10</h5>
@@ -87,7 +87,7 @@ const Home = () => {
             </div>
 
             {/* Grade 11 */}
-            <div className="col-md-4 col-sm-6">
+            <div className="col-6 col-md-4 col-sm-6">
               <Link to="/grade/grade11" className="grade-card">
                 <div className="grade-icon">11</div>
                 <h5>Grade 11</h5>
@@ -97,7 +97,7 @@ const Home = () => {
             </div>
 
             {/* Advanced Level */}
-            <div className="col-md-6 mx-auto">
+            <div className="col-12 col-md-6 mx-auto">
               <Link to="/grade/al" className="grade-card advanced-level">
                 <div className="grade-icon">A/L</div>
                 <h5>Advanced Level</h5>
@@ -112,8 +112,8 @@ const Home = () => {
       {/* Features Section */}
       <section className="py-5 bg-light">
         <div className="container">
-          <h3 className="text-center mb-5">Why Choose Teaching Torch?</h3>
-          <div className="row g-4">
+          <h3 className="text-center mb-4 mb-md-5">Why Choose Teaching Torch?</h3>
+          <div className="row g-3 g-md-4">
             <div className="col-md-4">
               <div className="feature-card text-center">
                 <div className="feature-icon">
@@ -148,26 +148,26 @@ const Home = () => {
       {/* Statistics Section */}
       <section className="py-5">
         <div className="container">
-          <div className="row text-center">
-            <div className="col-md-3">
+          <div className="row text-center g-3">
+            <div className="col-6 col-md-3">
               <div className="stat-item">
                 <h3 className="text-primary">7</h3>
                 <span>Grade Levels</span>
               </div>
             </div>
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <div className="stat-item">
                 <h3 className="text-primary">3</h3>
                 <span>Languages</span>
               </div>
             </div>
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <div className="stat-item">
                 <h3 className="text-primary">100%</h3>
                 <span>Free Content</span>
               </div>
             </div>
-            <div className="col-md-3">
+            <div className="col-6 col-md-3">
               <div className="stat-item">
                 <h3 className="text-primary">24/7</h3>
                 <span>Access</span>
