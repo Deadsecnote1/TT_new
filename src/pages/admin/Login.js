@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const AdminLogin = () => {
@@ -6,13 +6,18 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('AdminLogin component mounted');
+  }, []);
+
   const handleLogin = (e) => {
     e.preventDefault();
     
     // Simple password check (in production, use proper authentication)
     if (password === 'admin123') {
       localStorage.setItem('adminLoggedIn', 'true');
-      navigate('/admin');
+      navigate('/admin', { replace: true });
     } else {
       setError('Invalid password. Try: admin123');
     }
