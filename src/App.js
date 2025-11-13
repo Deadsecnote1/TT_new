@@ -50,7 +50,7 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <DataProvider>
-          <Router>
+          <Router basename="/TT_new">
             <div className="App">
               <Navbar />
               <main className="main-content">
