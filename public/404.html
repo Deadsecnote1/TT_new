@@ -2,44 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Teaching Torch - Free Educational Resources for Sri Lankan Students"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Teaching Torch - Free Education Resources</title>
     <script type="text/javascript">
       // Single Page Apps routing for GitHub Pages
-      // Redirects all 404s to index.html while preserving the path for React Router
+      // This script must run immediately to redirect 404s to index.html
       (function() {
         var path = window.location.pathname;
         var search = window.location.search || '';
         var hash = window.location.hash || '';
         
-        // If we're at the root or index.html, don't redirect
+        // Don't redirect if already at index.html or root
         if (path === '/TT_new/' || path === '/TT_new/index.html' || path === '/TT_new') {
           return;
         }
         
-        // Store the original path
-        sessionStorage.setItem('redirectPath', path + search + hash);
+        // Store the original path for React Router
+        try {
+          sessionStorage.setItem('redirectPath', path + search + hash);
+        } catch(e) {
+          // Fallback if sessionStorage not available
+        }
         
-        // Redirect to index.html - React will restore the path
+        // Redirect to index.html
         var basePath = '/TT_new';
         var indexUrl = window.location.origin + basePath + '/index.html';
+        
+        // Use replace to avoid adding to history
         window.location.replace(indexUrl);
       })();
     </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    
-    <!-- Bootstrap JavaScript Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <p>Redirecting...</p>
+    <script>
+      // Fallback redirect if JavaScript is enabled but replace didn't work
+      setTimeout(function() {
+        window.location.href = '/TT_new/index.html';
+      }, 100);
+    </script>
   </body>
 </html>

@@ -5,13 +5,24 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 
 // Handle GitHub Pages 404 redirect BEFORE React loads
+// This must run synchronously before React Router initializes
 (function() {
   if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
-    const redirectPath = sessionStorage.getItem('redirectPath');
-    if (redirectPath && (window.location.pathname === '/TT_new/index.html' || window.location.pathname === '/TT_new/')) {
-      sessionStorage.removeItem('redirectPath');
-      // Update URL immediately so React Router sees the correct path
-      window.history.replaceState({}, '', redirectPath);
+    try {
+      const redirectPath = sessionStorage.getItem('redirectPath');
+      const currentPath = window.location.pathname;
+      
+      // If we have a stored redirect path and we're at index.html, restore it
+      if (redirectPath && (currentPath === '/TT_new/index.html' || currentPath === '/TT_new/')) {
+        sessionStorage.removeItem('redirectPath');
+        // Update URL immediately so React Router sees the correct path
+        // Use replaceState to avoid page reload
+        window.history.replaceState({}, '', redirectPath);
+        // Force React Router to see the new path
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
+    } catch(e) {
+      console.error('Error restoring redirect path:', e);
     }
   }
 })();
