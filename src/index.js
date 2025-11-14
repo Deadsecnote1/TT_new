@@ -15,11 +15,17 @@ import reportWebVitals from './reportWebVitals';
       // If we have a stored redirect path and we're at index.html, restore it
       if (redirectPath && (currentPath === '/TT_new/index.html' || currentPath === '/TT_new/')) {
         sessionStorage.removeItem('redirectPath');
+        
         // Update URL immediately so React Router sees the correct path
         // Use replaceState to avoid page reload
-        window.history.replaceState({}, '', redirectPath);
-        // Force React Router to see the new path
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        const fullPath = redirectPath;
+        window.history.replaceState(null, '', fullPath);
+        
+        // Force a location update for React Router
+        // This ensures React Router sees the correct path on initialization
+        if (window.location.pathname !== fullPath) {
+          window.location.replace(fullPath);
+        }
       }
     } catch(e) {
       console.error('Error restoring redirect path:', e);
