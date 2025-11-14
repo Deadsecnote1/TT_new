@@ -24,7 +24,7 @@
           // Fallback if sessionStorage not available
         }
         
-        // Redirect to index.html
+        // Redirect to index.html immediately
         var basePath = '/TT_new';
         var indexUrl = window.location.origin + basePath + '/index.html';
         
@@ -32,14 +32,21 @@
         window.location.replace(indexUrl);
       })();
     </script>
+    <!-- Meta refresh as backup if JavaScript fails -->
+    <meta http-equiv="refresh" content="0; url=/TT_new/index.html" />
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <p>Redirecting...</p>
+      <meta http-equiv="refresh" content="0; url=/TT_new/index.html" />
+    </noscript>
     <p>Redirecting...</p>
     <script>
       // Fallback redirect if JavaScript is enabled but replace didn't work
       setTimeout(function() {
-        window.location.href = '/TT_new/index.html';
+        if (window.location.pathname !== '/TT_new/index.html' && window.location.pathname !== '/TT_new/') {
+          window.location.href = '/TT_new/index.html';
+        }
       }, 100);
     </script>
   </body>
