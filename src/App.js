@@ -46,16 +46,6 @@ const NotFound = () => (
 );
 
 function App() {
-  // Handle GitHub Pages 404 redirect
-  React.useEffect(() => {
-    const redirectPath = sessionStorage.getItem('redirectPath');
-    if (redirectPath && window.location.pathname === '/TT_new/index.html') {
-      sessionStorage.removeItem('redirectPath');
-      // Update the URL without reloading
-      window.history.replaceState({}, '', redirectPath);
-    }
-  }, []);
-
   return (
     <ThemeProvider>
       <LanguageProvider>

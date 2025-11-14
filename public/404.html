@@ -20,10 +20,15 @@
         var search = window.location.search || '';
         var hash = window.location.hash || '';
         
-        // Store the original path for React Router
+        // If we're at the root or index.html, don't redirect
+        if (path === '/TT_new/' || path === '/TT_new/index.html' || path === '/TT_new') {
+          return;
+        }
+        
+        // Store the original path
         sessionStorage.setItem('redirectPath', path + search + hash);
         
-        // Redirect to index.html
+        // Redirect to index.html - React will restore the path
         var basePath = '/TT_new';
         var indexUrl = window.location.origin + basePath + '/index.html';
         window.location.replace(indexUrl);
