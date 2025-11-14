@@ -4,9 +4,302 @@ import { useData } from '../../context/DataContext';
 import { isGoogleDriveLink, extractFileId } from '../../utils/googleDrive';
 import { isYouTubeLink, extractYouTubeId } from '../../utils/youtube';
 
+// Subject Management Component
+const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, deleteSubject }) => {
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [newSubjectId, setNewSubjectId] = useState('');
+  const [newSubjectIcon, setNewSubjectIcon] = useState('bi-book');
+  const [selectedGrades, setSelectedGrades] = useState([]);
+  const [editingSubject, setEditingSubject] = useState(null);
+
+  const commonIcons = [
+    { value: 'bi-book', label: 'Book' },
+    { value: 'bi-flask', label: 'Flask (Science)' },
+    { value: 'bi-calculator', label: 'Calculator (Math)' },
+    { value: 'bi-globe', label: 'Globe (English)' },
+    { value: 'bi-clock-history', label: 'Clock (History)' },
+    { value: 'bi-palette', label: 'Palette (Arts)' },
+    { value: 'bi-music-note', label: 'Music' },
+    { value: 'bi-code-slash', label: 'Code (IT)' },
+    { value: 'bi-geo-alt', label: 'Geography' },
+    { value: 'bi-heart', label: 'Health' },
+    { value: 'bi-people', label: 'Social Studies' },
+    { value: 'bi-lightbulb', label: 'General' }
+  ];
+
+  const handleGradeToggle = (gradeId) => {
+    setSelectedGrades(prev => 
+      prev.includes(gradeId) 
+        ? prev.filter(g => g !== gradeId)
+        : [...prev, gradeId]
+    );
+  };
+
+  const handleAddSubject = () => {
+    if (!newSubjectName.trim()) {
+      alert('Please enter a subject name');
+      return;
+    }
+    if (!newSubjectId.trim()) {
+      alert('Please enter a subject ID (lowercase, no spaces, e.g., "physics", "chemistry")');
+      return;
+    }
+    if (selectedGrades.length === 0) {
+      alert('Please select at least one grade for this subject');
+      return;
+    }
+    if (subjects[newSubjectId]) {
+      alert('A subject with this ID already exists. Please use a different ID.');
+      return;
+    }
+
+    addSubject(newSubjectId.toLowerCase().trim(), newSubjectName.trim(), newSubjectIcon, selectedGrades);
+    setNewSubjectName('');
+    setNewSubjectId('');
+    setNewSubjectIcon('bi-book');
+    setSelectedGrades([]);
+    alert(`✅ Subject "${newSubjectName}" added successfully for selected grades!`);
+  };
+
+  const handleEditSubject = (subjectId) => {
+    const subject = subjects[subjectId];
+    setEditingSubject(subjectId);
+    setNewSubjectName(subject.name);
+    setNewSubjectIcon(subject.icon);
+    setSelectedGrades([...subject.grades]);
+  };
+
+  const handleUpdateSubject = () => {
+    if (!newSubjectName.trim()) {
+      alert('Please enter a subject name');
+      return;
+    }
+    if (selectedGrades.length === 0) {
+      alert('Please select at least one grade for this subject');
+      return;
+    }
+
+    updateSubject(editingSubject, {
+      name: newSubjectName.trim(),
+      icon: newSubjectIcon,
+      grades: selectedGrades
+    });
+    setEditingSubject(null);
+    setNewSubjectName('');
+    setNewSubjectId('');
+    setNewSubjectIcon('bi-book');
+    setSelectedGrades([]);
+    alert(`✅ Subject updated successfully!`);
+  };
+
+  const handleDeleteSubject = (subjectId) => {
+    const subject = subjects[subjectId];
+    if (window.confirm(`Are you sure you want to delete "${subject.name}"?\n\nThis will remove the subject from all grades. This action cannot be undone.`)) {
+      deleteSubject(subjectId);
+      alert(`✅ Subject "${subject.name}" deleted successfully!`);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingSubject(null);
+    setNewSubjectName('');
+    setNewSubjectId('');
+    setNewSubjectIcon('bi-book');
+    setSelectedGrades([]);
+  };
+
+  return (
+    <div className="row g-4">
+      {/* Add/Edit Subject Form */}
+      <div className="col-md-6">
+        <div className="card">
+          <div className="card-header">
+            <h5>
+              <i className="bi bi-plus-circle me-2"></i>
+              {editingSubject ? 'Edit Subject' : 'Add New Subject'}
+            </h5>
+          </div>
+          <div className="card-body">
+            <div className="mb-3">
+              <label className="form-label">Subject Name <span className="text-danger">*</span></label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g., Physics, Chemistry, Biology"
+                value={newSubjectName}
+                onChange={(e) => setNewSubjectName(e.target.value)}
+              />
+            </div>
+
+            {!editingSubject && (
+              <div className="mb-3">
+                <label className="form-label">Subject ID <span className="text-danger">*</span></label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g., physics, chemistry (lowercase, no spaces)"
+                  value={newSubjectId}
+                  onChange={(e) => setNewSubjectId(e.target.value.toLowerCase().replace(/\s+/g, ''))}
+                />
+                <small className="form-text text-muted">
+                  Used internally. Lowercase, no spaces (e.g., "physics", "chemistry")
+                </small>
+              </div>
+            )}
+
+            <div className="mb-3">
+              <label className="form-label">Icon</label>
+              <select
+                className="form-select"
+                value={newSubjectIcon}
+                onChange={(e) => setNewSubjectIcon(e.target.value)}
+              >
+                {commonIcons.map(icon => (
+                  <option key={icon.value} value={icon.value}>
+                    {icon.label}
+                  </option>
+                ))}
+              </select>
+              <small className="form-text text-muted">
+                Preview: <i className={newSubjectIcon}></i>
+              </small>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Select Grades <span className="text-danger">*</span></label>
+              <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {Object.keys(grades).map(gradeId => (
+                  <div key={gradeId} className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`grade-${gradeId}`}
+                      checked={selectedGrades.includes(gradeId)}
+                      onChange={() => handleGradeToggle(gradeId)}
+                    />
+                    <label className="form-check-label" htmlFor={`grade-${gradeId}`}>
+                      {grades[gradeId].display || grades[gradeId].name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <small className="form-text text-muted">
+                {selectedGrades.length > 0 
+                  ? `Selected: ${selectedGrades.map(g => grades[g]?.display || grades[g]?.name).join(', ')}`
+                  : 'Select at least one grade where this subject should appear'}
+              </small>
+            </div>
+
+            <div className="d-flex gap-2">
+              {editingSubject ? (
+                <>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={handleUpdateSubject}
+                    disabled={!newSubjectName.trim() || selectedGrades.length === 0}
+                  >
+                    <i className="bi bi-check-circle me-2"></i>
+                    Update Subject
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary"
+                    onClick={cancelEdit}
+                  >
+                    <i className="bi bi-x-circle me-2"></i>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleAddSubject}
+                  disabled={!newSubjectName.trim() || !newSubjectId.trim() || selectedGrades.length === 0}
+                >
+                  <i className="bi bi-plus-circle me-2"></i>
+                  Add Subject
+                </button>
+              )}
+            </div>
+
+            <div className="alert alert-info mt-3 mb-0">
+              <small>
+                <i className="bi bi-info-circle me-1"></i>
+                <strong>Important:</strong> The subject will only appear in the grades you select. 
+                For example, if you add "Physics" and only select Grade 10, it will only show in Grade 10, not in other grades.
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Existing Subjects List */}
+      <div className="col-md-6">
+        <div className="card">
+          <div className="card-header">
+            <h5>
+              <i className="bi bi-list-ul me-2"></i>
+              Existing Subjects ({Object.keys(subjects).length})
+            </h5>
+          </div>
+          <div className="card-body">
+            <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              {Object.keys(subjects).length === 0 ? (
+                <p className="text-muted text-center">No subjects added yet.</p>
+              ) : (
+                <div className="list-group">
+                  {Object.keys(subjects).map(subjectId => {
+                    const subject = subjects[subjectId];
+                    return (
+                      <div key={subjectId} className="list-group-item">
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div className="flex-grow-1">
+                            <div className="d-flex align-items-center mb-2">
+                              <i className={`${subject.icon} me-2 text-primary`} style={{ fontSize: '1.5rem' }}></i>
+                              <h6 className="mb-0">{subject.name}</h6>
+                            </div>
+                            <small className="text-muted d-block mb-1">
+                              ID: <code>{subjectId}</code>
+                            </small>
+                            <small className="text-muted d-block">
+                              Grades: {subject.grades.length > 0 
+                                ? subject.grades.map(g => grades[g]?.display || grades[g]?.name).join(', ')
+                                : 'None (will not appear anywhere)'
+                              }
+                            </small>
+                          </div>
+                          <div className="d-flex gap-1">
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleEditSubject(subjectId)}
+                              title="Edit subject"
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDeleteSubject(subjectId)}
+                              title="Delete subject"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { getStats, exportData } = useData();
+  const { getStats, exportData, subjects, grades, addSubject, updateSubject, deleteSubject } = useData();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedGrade, setSelectedGrade] = useState('grade6');
   const [selectedSubject, setSelectedSubject] = useState('mathematics');
@@ -24,6 +317,15 @@ const AdminDashboard = () => {
   const [schoolName, setSchoolName] = useState('');
   
   const stats = getStats();
+
+  // Ensure selectedSubject exists in subjects, otherwise use first available
+  useEffect(() => {
+    if (subjects && Object.keys(subjects).length > 0) {
+      if (!subjects[selectedSubject]) {
+        setSelectedSubject(Object.keys(subjects)[0]);
+      }
+    }
+  }, [subjects, selectedSubject]);
 
   // Load uploaded files from localStorage on component mount
   useEffect(() => {
@@ -278,6 +580,15 @@ const AdminDashboard = () => {
                 Manage Resources
               </button>
             </li>
+            <li className="nav-item">
+              <button 
+                className={`nav-link ${activeTab === 'subjects' ? 'active' : ''}`}
+                onClick={() => setActiveTab('subjects')}
+              >
+                <i className="bi bi-book me-2"></i>
+                Manage Subjects
+              </button>
+            </li>
           </ul>
         </div>
       </section>
@@ -421,10 +732,11 @@ const AdminDashboard = () => {
                           value={selectedSubject}
                           onChange={(e) => setSelectedSubject(e.target.value)}
                         >
-                          <option value="mathematics">Mathematics</option>
-                          <option value="science">Science</option>
-                          <option value="english">English</option>
-                          <option value="history">History</option>
+                          {Object.keys(subjects).map(subjectId => (
+                            <option key={subjectId} value={subjectId}>
+                              {subjects[subjectId].name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="col-md-4">
@@ -756,12 +1068,24 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {activeTab === 'subjects' && (
+            <SubjectManagement 
+              subjects={subjects}
+              grades={grades}
+              addSubject={addSubject}
+              updateSubject={updateSubject}
+              deleteSubject={deleteSubject}
+            />
+          )}
+
           {/* Info Section */}
           <div className="alert alert-info mt-4">
             <h5><i className="bi bi-info-circle me-2"></i>Google Drive Integration</h5>
             <p className="mb-0">
               {activeTab === 'overview' ? 
                 'This dashboard provides an overview of resources and platform statistics. Resources are stored as Google Drive links.' :
+                activeTab === 'subjects' ?
+                '🔹 Subjects are grade-specific. When you add a subject, select which grades it should appear in.\n🔹 A subject will only show up in the grades you select.\n🔹 You can update a subject\'s grade associations at any time.' :
                 '🔹 Resources are stored as Google Drive share links in localStorage.\n🔹 Users can view PDFs directly in the browser or download them.\n🔹 Make sure all Google Drive files are set to "Anyone with the link can view" for public access.\n🔹 No backend server needed - everything works client-side!'
               }
             </p>

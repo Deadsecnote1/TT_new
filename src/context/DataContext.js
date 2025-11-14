@@ -146,6 +146,45 @@ const dataReducer = (state, action) => {
         }
       };
     
+    case 'ADD_SUBJECT': {
+      const { subjectId, subjectName, subjectIcon, subjectGrades } = action.payload;
+      return {
+        ...state,
+        subjects: {
+          ...state.subjects,
+          [subjectId]: {
+            name: subjectName,
+            icon: subjectIcon || 'bi-book',
+            grades: subjectGrades || []
+          }
+        }
+      };
+    }
+    
+    case 'UPDATE_SUBJECT': {
+      const { subjectId: updateSubjectId, updates } = action.payload;
+      return {
+        ...state,
+        subjects: {
+          ...state.subjects,
+          [updateSubjectId]: {
+            ...state.subjects[updateSubjectId],
+            ...updates
+          }
+        }
+      };
+    }
+    
+    case 'DELETE_SUBJECT': {
+      const { subjectId: deleteSubjectId } = action.payload;
+      const newSubjects = { ...state.subjects };
+      delete newSubjects[deleteSubjectId];
+      return {
+        ...state,
+        subjects: newSubjects
+      };
+    }
+    
     default:
       return state;
   }
@@ -271,6 +310,40 @@ export const DataProvider = ({ children }) => {
       payload: message
     });
   }, []);
+
+  const addSubject = useCallback((subjectId, subjectName, subjectIcon, subjectGrades) => {
+    dispatch({
+      type: 'ADD_SUBJECT',
+      payload: { subjectId, subjectName, subjectIcon, subjectGrades }
+    });
+    dispatch({
+      type: 'LOG_ACTIVITY',
+      payload: `Added subject: ${subjectName} for grades: ${subjectGrades.join(', ')}`
+    });
+  }, []);
+
+  const updateSubject = useCallback((subjectId, updates) => {
+    dispatch({
+      type: 'UPDATE_SUBJECT',
+      payload: { subjectId, updates }
+    });
+    dispatch({
+      type: 'LOG_ACTIVITY',
+      payload: `Updated subject: ${state.subjects[subjectId]?.name || subjectId}`
+    });
+  }, [state.subjects]);
+
+  const deleteSubject = useCallback((subjectId) => {
+    const subjectName = state.subjects[subjectId]?.name || subjectId;
+    dispatch({
+      type: 'DELETE_SUBJECT',
+      payload: { subjectId }
+    });
+    dispatch({
+      type: 'LOG_ACTIVITY',
+      payload: `Deleted subject: ${subjectName}`
+    });
+  }, [state.subjects]);
 
   // Utility functions
   const getSubjectsForGrade = useCallback((gradeId) => {
@@ -446,6 +519,9 @@ export const DataProvider = ({ children }) => {
     addPaper,
     addVideo,
     logActivity,
+    addSubject,
+    updateSubject,
+    deleteSubject,
     
     // Utilities
     getSubjectsForGrade,
