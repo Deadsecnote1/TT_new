@@ -147,7 +147,7 @@ const dataReducer = (state, action) => {
       };
     
     case 'ADD_SUBJECT': {
-      const { subjectId, subjectName, subjectIcon, subjectGrades } = action.payload;
+      const { subjectId, subjectName, subjectIcon, subjectGrades, subjectPriorities } = action.payload;
       return {
         ...state,
         subjects: {
@@ -155,7 +155,8 @@ const dataReducer = (state, action) => {
           [subjectId]: {
             name: subjectName,
             icon: subjectIcon || 'bi-book',
-            grades: subjectGrades || []
+            grades: subjectGrades || [],
+            priorities: subjectPriorities || {}
           }
         }
       };
@@ -209,22 +210,26 @@ export const DataProvider = ({ children }) => {
       'english': {
         name: 'English',
         icon: 'bi-globe',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al'],
+        priorities: {}
       },
       'science': {
         name: 'Science',
         icon: 'bi-flask',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al'],
+        priorities: {}
       },
       'mathematics': {
         name: 'Mathematics',
         icon: 'bi-calculator',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al'],
+        priorities: {}
       },
       'history': {
         name: 'History',
         icon: 'bi-clock-history',
-        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al']
+        grades: ['grade6', 'grade7', 'grade8', 'grade9', 'grade10', 'grade11', 'al'],
+        priorities: {}
       }
     },
     resources: {},
@@ -243,19 +248,49 @@ export const DataProvider = ({ children }) => {
     
     try {
       const savedData = localStorage.getItem('teachingTorchData');
+      const dataVersion = localStorage.getItem('teachingTorchDataVersion') || '1.0.0';
+      const currentVersion = '2.0.0'; // Increment this when you want to force refresh
       
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
+      // Check if we need to clear cache (version mismatch or force refresh)
+      const shouldClearCache = dataVersion !== currentVersion || 
+                               localStorage.getItem('teachingTorchForceRefresh') === 'true';
+      
+      if (shouldClearCache && savedData) {
+        console.log('Clearing old cache due to version mismatch or force refresh');
+        localStorage.removeItem('teachingTorchData');
+        localStorage.removeItem('teachingTorchForceRefresh');
+      }
+      
+      const finalData = shouldClearCache ? null : savedData;
+      
+      if (finalData) {
+        const parsedData = JSON.parse(finalData);
+        
+        // Migration: Ensure all subjects have priorities field for backward compatibility
+        if (parsedData.subjects) {
+          Object.keys(parsedData.subjects).forEach(subjectId => {
+            if (!parsedData.subjects[subjectId].priorities) {
+              parsedData.subjects[subjectId].priorities = {};
+            }
+          });
+        }
+        
         dispatch({ type: 'INITIALIZE_DATA', payload: parsedData });
       } else {
         const defaultData = getDefaultData();
         dispatch({ type: 'INITIALIZE_DATA', payload: defaultData });
-        // Save default data
+        // Save default data with version
         localStorage.setItem('teachingTorchData', JSON.stringify(defaultData));
+        localStorage.setItem('teachingTorchDataVersion', currentVersion);
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to load data' });
+      // If there's an error parsing, clear the corrupted data
+      localStorage.removeItem('teachingTorchData');
+      const defaultData = getDefaultData();
+      dispatch({ type: 'INITIALIZE_DATA', payload: defaultData });
+      localStorage.setItem('teachingTorchData', JSON.stringify(defaultData));
+      localStorage.setItem('teachingTorchDataVersion', '2.0.0');
     }
   }, [getDefaultData]); // Only depend on getDefaultData
 
@@ -264,6 +299,7 @@ export const DataProvider = ({ children }) => {
     if (!state.loading && Object.keys(state.grades).length > 0) {
       try {
         localStorage.setItem('teachingTorchData', JSON.stringify(state));
+        localStorage.setItem('teachingTorchDataVersion', '2.0.0');
       } catch (error) {
         console.error('Error saving data:', error);
       }
@@ -311,10 +347,10 @@ export const DataProvider = ({ children }) => {
     });
   }, []);
 
-  const addSubject = useCallback((subjectId, subjectName, subjectIcon, subjectGrades) => {
+  const addSubject = useCallback((subjectId, subjectName, subjectIcon, subjectGrades, subjectPriorities = {}) => {
     dispatch({
       type: 'ADD_SUBJECT',
-      payload: { subjectId, subjectName, subjectIcon, subjectGrades }
+      payload: { subjectId, subjectName, subjectIcon, subjectGrades, subjectPriorities }
     });
     dispatch({
       type: 'LOG_ACTIVITY',
@@ -347,13 +383,33 @@ export const DataProvider = ({ children }) => {
 
   // Utility functions
   const getSubjectsForGrade = useCallback((gradeId) => {
-    const subjects = {};
+    // First, collect all subjects for this grade with their priorities
+    const subjectEntries = [];
     Object.keys(state.subjects).forEach(subjectId => {
       const subject = state.subjects[subjectId];
       if (subject.grades.includes(gradeId)) {
-        subjects[subjectId] = subject;
+        // Get priority for this grade (default to 999 if not set, so unprioritized subjects appear last)
+        const priority = subject.priorities?.[gradeId] ?? 999;
+        subjectEntries.push([subjectId, subject, priority]);
       }
     });
+    
+    // Sort by priority (lower number = higher priority, appears first)
+    subjectEntries.sort((a, b) => {
+      // First sort by priority
+      if (a[2] !== b[2]) {
+        return a[2] - b[2];
+      }
+      // If priorities are equal, sort alphabetically by name
+      return a[1].name.localeCompare(b[1].name);
+    });
+    
+    // Build object in sorted order (JavaScript preserves insertion order for string keys)
+    const subjects = {};
+    subjectEntries.forEach(([subjectId, subject]) => {
+      subjects[subjectId] = subject;
+    });
+    
     return subjects;
   }, [state.subjects]);
 

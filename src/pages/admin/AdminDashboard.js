@@ -10,6 +10,7 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
   const [newSubjectId, setNewSubjectId] = useState('');
   const [newSubjectIcon, setNewSubjectIcon] = useState('bi-book');
   const [selectedGrades, setSelectedGrades] = useState([]);
+  const [gradePriorities, setGradePriorities] = useState({}); // { gradeId: priorityNumber }
   const [editingSubject, setEditingSubject] = useState(null);
 
   const commonIcons = [
@@ -28,11 +29,38 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
   ];
 
   const handleGradeToggle = (gradeId) => {
-    setSelectedGrades(prev => 
-      prev.includes(gradeId) 
-        ? prev.filter(g => g !== gradeId)
-        : [...prev, gradeId]
-    );
+    const isCurrentlySelected = selectedGrades.includes(gradeId);
+    
+    if (isCurrentlySelected) {
+      // Removing grade
+      setSelectedGrades(prev => prev.filter(g => g !== gradeId));
+      setGradePriorities(prevPriorities => {
+        const newPriorities = { ...prevPriorities };
+        delete newPriorities[gradeId];
+        return newPriorities;
+      });
+    } else {
+      // Adding grade - set default priority
+      const maxPriority = Math.max(
+        ...Object.values(gradePriorities).map(p => Number(p) || 0),
+        ...selectedGrades.map(g => Number(gradePriorities[g]) || 0),
+        0
+      );
+      
+      setSelectedGrades(prev => [...prev, gradeId]);
+      setGradePriorities(prevPriorities => ({
+        ...prevPriorities,
+        [gradeId]: maxPriority + 1
+      }));
+    }
+  };
+
+  const handlePriorityChange = (gradeId, priority) => {
+    const priorityNum = parseInt(priority) || 0;
+    setGradePriorities(prev => ({
+      ...prev,
+      [gradeId]: priorityNum
+    }));
   };
 
   const handleAddSubject = () => {
@@ -53,11 +81,18 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
       return;
     }
 
-    addSubject(newSubjectId.toLowerCase().trim(), newSubjectName.trim(), newSubjectIcon, selectedGrades);
+    addSubject(
+      newSubjectId.toLowerCase().trim(), 
+      newSubjectName.trim(), 
+      newSubjectIcon, 
+      selectedGrades,
+      gradePriorities
+    );
     setNewSubjectName('');
     setNewSubjectId('');
     setNewSubjectIcon('bi-book');
     setSelectedGrades([]);
+    setGradePriorities({});
     alert(`✅ Subject "${newSubjectName}" added successfully for selected grades!`);
   };
 
@@ -67,6 +102,7 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
     setNewSubjectName(subject.name);
     setNewSubjectIcon(subject.icon);
     setSelectedGrades([...subject.grades]);
+    setGradePriorities({ ...(subject.priorities || {}) });
   };
 
   const handleUpdateSubject = () => {
@@ -82,13 +118,15 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
     updateSubject(editingSubject, {
       name: newSubjectName.trim(),
       icon: newSubjectIcon,
-      grades: selectedGrades
+      grades: selectedGrades,
+      priorities: gradePriorities
     });
     setEditingSubject(null);
     setNewSubjectName('');
     setNewSubjectId('');
     setNewSubjectIcon('bi-book');
     setSelectedGrades([]);
+    setGradePriorities({});
     alert(`✅ Subject updated successfully!`);
   };
 
@@ -106,6 +144,7 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
     setNewSubjectId('');
     setNewSubjectIcon('bi-book');
     setSelectedGrades([]);
+    setGradePriorities({});
   };
 
   return (
@@ -120,6 +159,17 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
             </h5>
           </div>
           <div className="card-body">
+            <div className="alert alert-info mb-4">
+              <h6 className="mb-2"><i className="bi bi-lightbulb me-2"></i>How to Set Priority Order:</h6>
+              <ol className="mb-0 small">
+                <li>Enter the subject name and ID</li>
+                <li><strong>Check the checkbox</strong> for each grade where this subject should appear</li>
+                <li>After checking a grade, a <strong>Priority Order</strong> input field will appear</li>
+                <li>Enter a number (1 = appears first, 2 = appears second, etc.)</li>
+                <li>Subjects without priority will appear last</li>
+              </ol>
+            </div>
+            
             <div className="mb-3">
               <label className="form-label">Subject Name <span className="text-danger">*</span></label>
               <input
@@ -166,28 +216,75 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
             </div>
 
             <div className="mb-3">
-              <label className="form-label">Select Grades <span className="text-danger">*</span></label>
-              <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {Object.keys(grades).map(gradeId => (
-                  <div key={gradeId} className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={`grade-${gradeId}`}
-                      checked={selectedGrades.includes(gradeId)}
-                      onChange={() => handleGradeToggle(gradeId)}
-                    />
-                    <label className="form-check-label" htmlFor={`grade-${gradeId}`}>
-                      {grades[gradeId].display || grades[gradeId].name}
-                    </label>
-                  </div>
-                ))}
+              <label className="form-label">
+                Select Grades & Set Priority Order <span className="text-danger">*</span>
+                <small className="text-muted d-block mt-1">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Check a grade to see its priority input field. Lower numbers appear first (1 = 1st, 2 = 2nd, etc.)
+                </small>
+              </label>
+              <div className="border rounded p-3 bg-light" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {Object.keys(grades || {}).map(gradeId => {
+                  const isSelected = selectedGrades.includes(gradeId);
+                  const priority = gradePriorities[gradeId] || '';
+                  return (
+                    <div key={gradeId} className={`mb-3 pb-3 ${isSelected ? 'border-primary border-start border-3 ps-3 bg-light' : 'border-bottom'}`}>
+                      <div className="form-check mb-2">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`grade-${gradeId}`}
+                          checked={isSelected}
+                          onChange={() => handleGradeToggle(gradeId)}
+                        />
+                        <label className="form-check-label fw-bold" htmlFor={`grade-${gradeId}`}>
+                          {grades[gradeId]?.display || grades[gradeId]?.name || gradeId}
+                        </label>
+                      </div>
+                      {isSelected ? (
+                        <div className="ms-4 mt-2 p-3 bg-white rounded border border-primary shadow-sm">
+                          <label className="form-label fw-semibold small text-primary d-block mb-2">
+                            <i className="bi bi-sort-numeric-down me-1"></i>
+                            Priority Order (lower number = appears first)
+                          </label>
+                          <div className="d-flex align-items-center gap-2 mb-2">
+                            <input
+                              type="number"
+                              className="form-control form-control-lg"
+                              placeholder="e.g., 1, 2, 3..."
+                              min="1"
+                              value={priority}
+                              onChange={(e) => handlePriorityChange(gradeId, e.target.value)}
+                              style={{ maxWidth: '150px', fontSize: '1.1rem' }}
+                            />
+                            {priority && (
+                              <span className="badge bg-primary" style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}>
+                                {priority === '1' || priority === 1 ? '1st' : 
+                                 priority === '2' || priority === 2 ? '2nd' : 
+                                 priority === '3' || priority === 3 ? '3rd' : 
+                                 `${priority}th`} position
+                              </span>
+                            )}
+                          </div>
+                          <small className="form-text text-muted d-block">
+                            {priority 
+                              ? `✓ This subject will appear ${priority === '1' || priority === 1 ? '1st' : priority === '2' || priority === 2 ? '2nd' : priority === '3' || priority === 3 ? '3rd' : `${priority}th`} in ${grades[gradeId].display || grades[gradeId].name} resource pages`
+                              : '⚠ Enter a number to set display order (1 = first, 2 = second, etc.)'}
+                          </small>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-              <small className="form-text text-muted">
-                {selectedGrades.length > 0 
-                  ? `Selected: ${selectedGrades.map(g => grades[g]?.display || grades[g]?.name).join(', ')}`
-                  : 'Select at least one grade where this subject should appear'}
-              </small>
+              {selectedGrades.length > 0 && (
+                <div className="alert alert-success mt-2 mb-0">
+                  <small>
+                    <i className="bi bi-check-circle me-1"></i>
+                    <strong>Selected grades:</strong> {selectedGrades.map(g => grades[g]?.display || grades[g]?.name).join(', ')}
+                  </small>
+                </div>
+              )}
             </div>
 
             <div className="d-flex gap-2">
@@ -225,7 +322,8 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
               <small>
                 <i className="bi bi-info-circle me-1"></i>
                 <strong>Important:</strong> The subject will only appear in the grades you select. 
-                For example, if you add "Physics" and only select Grade 10, it will only show in Grade 10, not in other grades.
+                Priority order controls the display sequence (1 = first, 2 = second, etc.). 
+                Subjects without priority will appear last. The same subject can have different priorities in different grades.
               </small>
             </div>
           </div>
@@ -262,7 +360,11 @@ const SubjectManagement = ({ subjects, grades, addSubject, updateSubject, delete
                             </small>
                             <small className="text-muted d-block">
                               Grades: {subject.grades.length > 0 
-                                ? subject.grades.map(g => grades[g]?.display || grades[g]?.name).join(', ')
+                                ? subject.grades.map(g => {
+                                    const priority = subject.priorities?.[g];
+                                    const gradeName = grades[g]?.display || grades[g]?.name;
+                                    return priority ? `${gradeName} (Priority: ${priority})` : gradeName;
+                                  }).join(', ')
                                 : 'None (will not appear anywhere)'
                               }
                             </small>
@@ -656,6 +758,20 @@ const AdminDashboard = () => {
                         >
                           <i className="bi bi-download me-2"></i>
                           Export All Data
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (window.confirm('This will force all users (including mobile) to refresh their cache on next visit. This helps fix mobile caching issues. Continue?')) {
+                              localStorage.setItem('teachingTorchForceRefresh', 'true');
+                              localStorage.setItem('teachingTorchDataVersion', '1.0.0'); // Force version mismatch
+                              alert('✅ Cache refresh flag set! All users will see fresh data on their next visit.\n\nMobile users should:\n1. Close the browser app completely\n2. Reopen and visit the website\n3. Or clear browser cache in settings');
+                            }
+                          }}
+                          className="btn btn-warning"
+                          title="Force all users to refresh their cache (fixes mobile caching issues)"
+                        >
+                          <i className="bi bi-arrow-clockwise me-2"></i>
+                          Force Cache Refresh (Mobile Fix)
                         </button>
                         <Link to="/" className="btn btn-secondary">
                           <i className="bi bi-house me-2"></i>
@@ -1070,8 +1186,8 @@ const AdminDashboard = () => {
 
           {activeTab === 'subjects' && (
             <SubjectManagement 
-              subjects={subjects}
-              grades={grades}
+              subjects={subjects || {}}
+              grades={grades || {}}
               addSubject={addSubject}
               updateSubject={updateSubject}
               deleteSubject={deleteSubject}
