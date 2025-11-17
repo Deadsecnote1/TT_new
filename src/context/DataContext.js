@@ -250,15 +250,29 @@ export const DataProvider = ({ children }) => {
       const savedData = localStorage.getItem('teachingTorchData');
       const dataVersion = localStorage.getItem('teachingTorchDataVersion') || '1.0.0';
       const currentVersion = '2.0.0'; // Increment this when you want to force refresh
+      const forceRefresh = localStorage.getItem('teachingTorchForceRefresh') === 'true';
+      const lastClearTime = localStorage.getItem('teachingTorchLastClearTime');
+      const now = Date.now();
       
       // Check if we need to clear cache (version mismatch or force refresh)
+      // Also clear if it's been more than 1 hour since last clear (helps with mobile caching)
       const shouldClearCache = dataVersion !== currentVersion || 
-                               localStorage.getItem('teachingTorchForceRefresh') === 'true';
+                               forceRefresh ||
+                               (lastClearTime && (now - parseInt(lastClearTime)) > 3600000); // 1 hour
       
       if (shouldClearCache && savedData) {
         console.log('Clearing old cache due to version mismatch or force refresh');
+        // Clear all teachingTorch related data
         localStorage.removeItem('teachingTorchData');
         localStorage.removeItem('teachingTorchForceRefresh');
+        localStorage.removeItem('teachingTorch_uploadedFiles');
+        localStorage.removeItem('teachingTorch_recentUploads');
+        localStorage.setItem('teachingTorchLastClearTime', now.toString());
+        // Reload page to get fresh JavaScript
+        if (forceRefresh || dataVersion !== currentVersion) {
+          window.location.reload();
+          return;
+        }
       }
       
       const finalData = shouldClearCache ? null : savedData;
