@@ -262,11 +262,12 @@ export const DataProvider = ({ children }) => {
       
       if (shouldClearCache && savedData) {
         console.log('Clearing old cache due to version mismatch or force refresh');
-        // Clear all teachingTorch related data
+        // Clear main data structure, but preserve uploaded files
+        // Uploaded files should persist across version updates
         localStorage.removeItem('teachingTorchData');
         localStorage.removeItem('teachingTorchForceRefresh');
-        localStorage.removeItem('teachingTorch_uploadedFiles');
-        localStorage.removeItem('teachingTorch_recentUploads');
+        // DO NOT clear teachingTorch_uploadedFiles - preserve user uploads
+        // DO NOT clear teachingTorch_recentUploads - preserve recent uploads
         localStorage.setItem('teachingTorchLastClearTime', now.toString());
         // Don't reload here - let the cache-busting script in index.html handle it
       }

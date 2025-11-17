@@ -29,14 +29,14 @@
           const storedVersion = localStorage.getItem('teachingTorchDataVersion') || '1.0.0';
           const forceRefresh = localStorage.getItem('teachingTorchForceRefresh') === 'true';
           
-          // If version mismatch or force refresh, clear all cache
+          // If version mismatch or force refresh, clear main data but preserve uploaded files
           if (storedVersion !== currentVersion || forceRefresh) {
-            console.log('Cache busting: Clearing old localStorage data');
+            console.log('Cache busting: Clearing old localStorage data (preserving uploaded files)');
             localStorage.removeItem('teachingTorchData');
             localStorage.removeItem('teachingTorchDataVersion');
             localStorage.removeItem('teachingTorchForceRefresh');
-            localStorage.removeItem('teachingTorch_uploadedFiles');
-            localStorage.removeItem('teachingTorch_recentUploads');
+            // DO NOT clear teachingTorch_uploadedFiles - preserve user uploads
+            // DO NOT clear teachingTorch_recentUploads - preserve recent uploads
             localStorage.setItem('teachingTorchDataVersion', currentVersion);
             
             // If force refresh, reload once to get fresh JS
