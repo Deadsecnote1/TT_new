@@ -152,20 +152,7 @@ const TextbooksPage = () => {
         </div>
       </section>
 
-      {/* Upload Status */}
-      {uploadedFiles.length > 0 && (
-        <section className="py-2 bg-success bg-opacity-10">
-          <div className="container">
-            <div className="text-center">
-              <small className="text-success">
-                <i className="bi bi-cloud-check me-1"></i>
-                <strong>{uploadedFiles.length} uploaded textbook{uploadedFiles.length !== 1 ? 's' : ''}</strong> available for {grade.display}
-                {uploadedFiles.some(f => f.downloadUrl) && ' | 🔗 Server files available for download'}
-              </small>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Upload Status - Removed for users, only visible in admin */}
 
       {/* Textbooks Content */}
       <section className="py-5">
@@ -183,12 +170,6 @@ const TextbooksPage = () => {
                     </div>
                     <div>
                       <h3 className="mb-0">{subject.name}</h3>
-                      <small className="text-muted">
-                        {hasUploadedTextbooks ? 
-                          `${Object.values(uploadedSubjectTextbooks).flat().length} textbook${Object.values(uploadedSubjectTextbooks).flat().length !== 1 ? 's' : ''} available` :
-                          'No textbooks uploaded yet'
-                        }
-                      </small>
                     </div>
                   </div>
                 </div>
@@ -201,16 +182,13 @@ const TextbooksPage = () => {
                         <div className="card h-100">
                           <div className="card-header bg-danger text-white text-center">
                             <h5 className="mb-0">
-                              <i className="bi bi-download me-2"></i>සිංහල
+                              <i className="bi bi-download me-2"></i>
                             </h5>
                           </div>
                           <div className="card-body">
                             {/* Uploaded Textbooks */}
                             {uploadedSubjectTextbooks.sinhala ? (
                               <div>
-                                <small className="text-success d-block mb-2">
-                                  <i className="bi bi-cloud-upload me-1"></i>Available Textbooks
-                                </small>
                                 <UploadedTextbookDownload 
                                   files={uploadedSubjectTextbooks.sinhala}
                                   medium="Sinhala" 
@@ -236,16 +214,13 @@ const TextbooksPage = () => {
                         <div className="card h-100">
                           <div className="card-header bg-purple text-white text-center" style={{ backgroundColor: 'var(--tamil)' }}>
                             <h5 className="mb-0">
-                              <i className="bi bi-download me-2"></i>தமிழ்
+                              <i className="bi bi-download me-2"></i>
                             </h5>
                           </div>
                           <div className="card-body">
                             {/* Uploaded Textbooks */}
                             {uploadedSubjectTextbooks.tamil ? (
                               <div>
-                                <small className="text-success d-block mb-2">
-                                  <i className="bi bi-cloud-upload me-1"></i>Available Textbooks
-                                </small>
                                 <UploadedTextbookDownload 
                                   files={uploadedSubjectTextbooks.tamil}
                                   medium="Tamil" 
@@ -278,9 +253,6 @@ const TextbooksPage = () => {
                             {/* Uploaded Textbooks */}
                             {uploadedSubjectTextbooks.english ? (
                               <div>
-                                <small className="text-success d-block mb-2">
-                                  <i className="bi bi-cloud-upload me-1"></i>Available Textbooks
-                                </small>
                                 <UploadedTextbookDownload 
                                   files={uploadedSubjectTextbooks.english}
                                   medium="English" 

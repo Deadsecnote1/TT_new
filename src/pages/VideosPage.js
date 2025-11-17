@@ -310,9 +310,6 @@ const VideosPage = () => {
               <i className="bi bi-youtube text-muted" style={{ fontSize: '4rem' }}></i>
               <h4 className="mt-3 text-muted">No video lessons available</h4>
               <p className="text-muted">Video lessons for this grade haven't been added yet.</p>
-              <Link to={`/grade/${gradeId}`} className="btn btn-primary">
-                <i className="bi bi-arrow-left me-1"></i>Back to Grade Overview
-              </Link>
             </div>
           )}
 
@@ -331,9 +328,6 @@ const VideosPage = () => {
                 {selectedLanguage === 'english' && 'English'}
                 {' '}for this grade.
               </p>
-              <Link to={`/grade/${gradeId}`} className="btn btn-primary">
-                <i className="bi bi-arrow-left me-1"></i>Back to Grade Overview
-              </Link>
             </div>
           )}
         </div>

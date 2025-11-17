@@ -341,9 +341,6 @@ const PapersPage = () => {
               <i className="bi bi-file-earmark-text text-muted" style={{ fontSize: '4rem' }}></i>
               <h4 className="mt-3 text-muted">No exam papers available</h4>
               <p className="text-muted">Past papers for this grade haven't been added yet.</p>
-              <Link to={`/grade/${gradeId}`} className="btn btn-primary">
-                <i className="bi bi-arrow-left me-1"></i>Back to Grade Overview
-              </Link>
             </div>
           )}
         </div>

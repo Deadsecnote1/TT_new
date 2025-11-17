@@ -826,6 +826,31 @@ small {
     min-height: 44px;
   }
   
+  /* Hide mobile browser text size adjuster (aA button) */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  /* Specifically hide iOS text size adjuster */
+  input::-webkit-text-size-adjust {
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Hide text size adjuster button on iOS */
+  input[type="text"]::-webkit-credentials-auto-fill-button,
+  input[type="text"]::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+  }
+  
   /* Text Truncation Mobile */
   .text-truncate {
     max-width: 100%;
