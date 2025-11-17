@@ -41,7 +41,6 @@ const Home = () => {
               <Link to="/grade/grade6" className="grade-card">
                 <div className="grade-icon">6</div>
                 <h5>Grade 6</h5>
-                <p className="text-muted">Foundation level subjects</p>
                 <div className="btn btn-primary">View Resources</div>
               </Link>
             </div>
@@ -51,7 +50,6 @@ const Home = () => {
               <Link to="/grade/grade7" className="grade-card">
                 <div className="grade-icon">7</div>
                 <h5>Grade 7</h5>
-                <p className="text-muted">Intermediate level content</p>
                 <div className="btn btn-primary">View Resources</div>
               </Link>
             </div>
@@ -61,7 +59,6 @@ const Home = () => {
               <Link to="/grade/grade8" className="grade-card">
                 <div className="grade-icon">8</div>
                 <h5>Grade 8</h5>
-                <p className="text-muted">Advanced concepts introduction</p>
                 <div className="btn btn-primary">View Resources</div>
               </Link>
             </div>
@@ -71,7 +68,6 @@ const Home = () => {
               <Link to="/grade/grade9" className="grade-card">
                 <div className="grade-icon">9</div>
                 <h5>Grade 9</h5>
-                <p className="text-muted">Pre-O/L preparation</p>
                 <div className="btn btn-primary">View Resources</div>
               </Link>
             </div>
@@ -81,7 +77,6 @@ const Home = () => {
               <Link to="/grade/grade10" className="grade-card">
                 <div className="grade-icon">10</div>
                 <h5>Grade 10</h5>
-                <p className="text-muted">O/L examination year</p>
                 <div className="btn btn-primary">View Resources</div>
               </Link>
             </div>
@@ -91,7 +86,6 @@ const Home = () => {
               <Link to="/grade/grade11" className="grade-card">
                 <div className="grade-icon">11</div>
                 <h5>Grade 11</h5>
-                <p className="text-muted">Post-O/L studies</p>
                 <div className="btn btn-primary">View Resources</div>
               </Link>
             </div>
@@ -101,7 +95,6 @@ const Home = () => {
               <Link to="/grade/al" className="grade-card advanced-level">
                 <div className="grade-icon">A/L</div>
                 <h5>Advanced Level</h5>
-                <p className="text-muted">University preparation</p>
                 <div className="btn btn-success">View Resources</div>
               </Link>
             </div>
