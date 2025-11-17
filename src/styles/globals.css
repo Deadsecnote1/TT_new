@@ -1,50 +1,53 @@
 /* Teaching Torch - Global Styles with Better Theme Support */
 :root {
-  /* Light Mode Colors - Modern Educational Theme */
-  --primary: #2563EB; /* Vibrant Blue - Trust & Education */
-  --secondary: #10B981; /* Emerald Green - Growth & Success */
-  --success: #059669; /* Success Green */
-  --info: #0EA5E9; /* Sky Blue - Information */
-  --warning: #F59E0B; /* Amber - Warnings */
-  --danger: #EF4444; /* Red - Errors */
-  --dark: #1F2937; /* Dark Gray */
-  --light: #F9FAFB; /* Light Gray */
-  --sinhala: #DC2626; /* Rich Red for Sinhala */
-  --tamil: #7C3AED; /* Purple for Tamil */
-  --english: #2563EB; /* Blue for English */
+  /* Light Mode Colors - Soft, Comfortable Educational Theme */
+  --primary: #4A90E2; /* Softer Blue - Trust & Education */
+  --secondary: #52B788; /* Softer Green - Growth & Success */
+  --success: #40916C; /* Softer Success Green */
+  --info: #5BA3D0; /* Softer Sky Blue - Information */
+  --warning: #E6A85C; /* Softer Amber - Warnings */
+  --danger: #E57373; /* Softer Red - Errors */
+  --dark: #4A5568; /* Softer Dark Gray */
+  --light: #F5F7FA; /* Softer Light Gray */
+  --sinhala: #C85A5A; /* Softer Red for Sinhala */
+  --tamil: #9B7EDE; /* Softer Purple for Tamil */
+  --english: #4A90E2; /* Softer Blue for English */
   
-  /* Theme Variables */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #e9ecef;
-  --text-primary: #212529;
-  --text-secondary: #6c757d;
-  --text-muted: #6c757d;
-  --border-color: #dee2e6;
+  /* Theme Variables - Softer Contrasts */
+  --bg-primary: #FAFBFC;
+  --bg-secondary: #F2F4F6;
+  --bg-tertiary: #E8EAED;
+  --text-primary: #374151;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border-color: #E5E7EB;
   --navbar-bg: var(--primary);
-  --card-bg: #ffffff;
-  --card-shadow: rgba(0, 0, 0, 0.1);
-  --hero-gradient: linear-gradient(135deg, var(--primary) 0%, #1E40AF 100%);
+  --card-bg: #FFFFFF;
+  --card-shadow: rgba(0, 0, 0, 0.06);
+  --hero-gradient: linear-gradient(135deg, #5BA3D0 0%, #4A90E2 100%);
 }
 
-/* Dark Mode Colors */
+/* Dark Mode Colors - Softer, More Comfortable */
 [data-theme="dark"] {
-  --bg-primary: #121212;
-  --bg-secondary: #1e1e1e;
-  --bg-tertiary: #2d2d2d;
-  --text-primary: #e0e0e0;
-  --text-secondary: #b0b0b0;
-  --text-muted: #9e9e9e;
-  --border-color: #404040;
-  --navbar-bg: #1E40AF;
-  --card-bg: #1e1e1e;
-  --card-shadow: rgba(0, 0, 0, 0.3);
-  --hero-gradient: linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%);
+  --bg-primary: #1A1D24;
+  --bg-secondary: #252932;
+  --bg-tertiary: #2F3440;
+  --text-primary: #D1D5DB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --border-color: #374151;
+  --navbar-bg: #3D5A80;
+  --card-bg: #252932;
+  --card-shadow: rgba(0, 0, 0, 0.4);
+  --hero-gradient: linear-gradient(135deg, #3D5A80 0%, #2E4A6B 100%);
   
-  --primary: #3B82F6;
-  --secondary: #10B981;
-  --light: #2d2d2d;
-  --dark: #e0e0e0;
+  --primary: #5BA3D0;
+  --secondary: #52B788;
+  --light: #2F3440;
+  --dark: #D1D5DB;
+  --sinhala: #C85A5A;
+  --tamil: #9B7EDE;
+  --english: #5BA3D0;
 }
 
 * {
@@ -294,10 +297,11 @@ a, a:hover, a:focus, a:active {
 }
 
 .btn-primary:hover {
-  background: #1B5E20;
-  border-color: #1B5E20;
+  background: #3A7BC8;
+  border-color: #3A7BC8;
   transform: translateY(-2px);
   text-decoration: none !important;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 .btn-success {
@@ -357,7 +361,7 @@ a, a:hover, a:focus, a:active {
   background-color: var(--card-bg);
   border-color: var(--primary);
   color: var(--text-primary);
-  box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.15);
 }
 
 .form-control::placeholder {
@@ -552,22 +556,22 @@ small {
 
 .alert-info {
   border-left-color: var(--info);
-  background-color: rgba(2, 119, 189, 0.1);
+  background-color: rgba(91, 163, 208, 0.08);
 }
 
 .alert-success {
   border-left-color: var(--success);
-  background-color: rgba(76, 175, 80, 0.1);
+  background-color: rgba(64, 145, 108, 0.08);
 }
 
 .alert-warning {
   border-left-color: var(--warning);
-  background-color: rgba(245, 124, 0, 0.1);
+  background-color: rgba(230, 168, 92, 0.08);
 }
 
 .alert-danger {
   border-left-color: var(--danger);
-  background-color: rgba(211, 47, 47, 0.1);
+  background-color: rgba(229, 115, 115, 0.08);
 }
 
 /* List Group Items */
