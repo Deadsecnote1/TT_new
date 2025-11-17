@@ -268,11 +268,7 @@ export const DataProvider = ({ children }) => {
         localStorage.removeItem('teachingTorch_uploadedFiles');
         localStorage.removeItem('teachingTorch_recentUploads');
         localStorage.setItem('teachingTorchLastClearTime', now.toString());
-        // Reload page to get fresh JavaScript
-        if (forceRefresh || dataVersion !== currentVersion) {
-          window.location.reload();
-          return;
-        }
+        // Don't reload here - let the cache-busting script in index.html handle it
       }
       
       const finalData = shouldClearCache ? null : savedData;
