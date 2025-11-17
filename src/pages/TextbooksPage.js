@@ -41,24 +41,31 @@ const TextbooksPage = () => {
   }, [gradeId, generateGradePageData]);
 
   // Group uploaded textbooks by subject and language
-  const getTextbooksBySubject = () => {
+  // Only include files for subjects that actually exist in pageData.subjects
+  const getTextbooksBySubject = useMemo(() => {
     const groupedTextbooks = {};
+    const validSubjectIds = Object.keys(pageData.subjects || {});
 
     uploadedFiles.forEach(file => {
-      if (!groupedTextbooks[file.subject]) {
-        groupedTextbooks[file.subject] = {};
-      }
-      
-      file.languages.forEach(language => {
-        if (!groupedTextbooks[file.subject][language]) {
-          groupedTextbooks[file.subject][language] = [];
+      // Only process files for subjects that exist
+      if (validSubjectIds.includes(file.subject)) {
+        if (!groupedTextbooks[file.subject]) {
+          groupedTextbooks[file.subject] = {};
         }
-        groupedTextbooks[file.subject][language].push(file);
-      });
+        
+        if (file.languages && Array.isArray(file.languages)) {
+          file.languages.forEach(language => {
+            if (!groupedTextbooks[file.subject][language]) {
+              groupedTextbooks[file.subject][language] = [];
+            }
+            groupedTextbooks[file.subject][language].push(file);
+          });
+        }
+      }
     });
 
     return groupedTextbooks;
-  };
+  }, [uploadedFiles, pageData.subjects]);
 
   if (!pageData.grade) {
     return (
@@ -73,7 +80,7 @@ const TextbooksPage = () => {
   }
 
   const { grade, subjects } = pageData;
-  const uploadedTextbooks = getTextbooksBySubject();
+  const uploadedTextbooks = getTextbooksBySubject;
 
   // Removed formatFileSize - not needed for Google Drive links
 

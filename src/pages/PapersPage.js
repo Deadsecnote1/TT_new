@@ -42,11 +42,15 @@ const PapersPage = () => {
   }
 
   const { grade, subjects } = pageData;
+  
+  // Filter uploaded files to only include those for existing subjects
+  const validSubjectIds = Object.keys(subjects);
+  const validUploadedFiles = uploadedFiles.filter(file => validSubjectIds.includes(file.subject));
 
   // Group uploaded papers by subject
   const getPapersBySubject = () => {
     const grouped = {};
-    uploadedFiles.forEach(file => {
+    validUploadedFiles.forEach(file => {
       if (!grouped[file.subject]) {
         grouped[file.subject] = { terms: { term1: [], term2: [], term3: [] }, chapters: {} };
       }

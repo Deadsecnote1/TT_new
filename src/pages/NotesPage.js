@@ -42,6 +42,10 @@ const NotesPage = () => {
   }
 
   const { grade, subjects } = pageData;
+  
+  // Filter uploaded files to only include those for existing subjects
+  const validSubjectIds = Object.keys(subjects);
+  const validUploadedFiles = uploadedFiles.filter(file => validSubjectIds.includes(file.subject));
 
   // Helper function to format file size
   const formatFileSize = (bytes) => {
@@ -216,7 +220,7 @@ const NotesPage = () => {
             const notes = subject.resources.notes || {};
             
             // Get uploaded notes for this subject
-            const uploadedNotes = uploadedFiles.filter(file => file.subject === subjectId);
+            const uploadedNotes = validUploadedFiles.filter(file => file.subject === subjectId);
             const uploadedNotesObj = {};
             uploadedNotes.forEach((file, index) => {
               uploadedNotesObj[`uploaded_${index}`] = {

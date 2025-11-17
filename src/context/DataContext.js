@@ -249,7 +249,7 @@ export const DataProvider = ({ children }) => {
     try {
       const savedData = localStorage.getItem('teachingTorchData');
       const dataVersion = localStorage.getItem('teachingTorchDataVersion') || '1.0.0';
-      const currentVersion = '2.1.0'; // Increment this when you want to force refresh
+      const currentVersion = '2.2.0'; // Increment this when you want to force refresh
       const forceRefresh = localStorage.getItem('teachingTorchForceRefresh') === 'true';
       const lastClearTime = localStorage.getItem('teachingTorchLastClearTime');
       const now = Date.now();
@@ -309,7 +309,7 @@ export const DataProvider = ({ children }) => {
     if (!state.loading && Object.keys(state.grades).length > 0) {
       try {
         localStorage.setItem('teachingTorchData', JSON.stringify(state));
-        localStorage.setItem('teachingTorchDataVersion', '2.1.0');
+        localStorage.setItem('teachingTorchDataVersion', '2.2.0');
       } catch (error) {
         console.error('Error saving data:', error);
       }

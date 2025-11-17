@@ -45,6 +45,10 @@ const VideosPage = () => {
   }
 
   const { grade, subjects } = pageData;
+  
+  // Filter uploaded files to only include those for existing subjects
+  const validSubjectIds = Object.keys(subjects);
+  const validUploadedFiles = uploadedFiles.filter(file => validSubjectIds.includes(file.subject));
 
   const handlePlayVideo = (video, videoUrl) => {
     const youtubeId = extractYouTubeId(videoUrl);
@@ -260,7 +264,7 @@ const VideosPage = () => {
             const videos = subject.videos || [];
             
             // Get uploaded videos for this subject
-            const uploadedVideos = uploadedFiles.filter(file => file.subject === subjectId);
+            const uploadedVideos = validUploadedFiles.filter(file => file.subject === subjectId);
             const uploadedVideosFormatted = uploadedVideos.map(file => ({
               ...file,
               title: file.title || file.name,
